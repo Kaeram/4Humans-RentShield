@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Shield, User, Building2, Scale, Loader2, ArrowLeft } from 'lucide-react'
+import { Shield, User, Building2, Scale, Loader2, ArrowLeft, Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { api } from '@/services/api'
 import { UserRole } from '@/types'
@@ -34,21 +34,37 @@ const roles = [
     },
 ]
 
-export function LoginPage() {
+export function SignupPage() {
     const navigate = useNavigate()
     const [selectedRole, setSelectedRole] = useState<UserRole>('tenant')
+    const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
+    const [agreeToTerms, setAgreeToTerms] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
+
+        // Validate passwords match
+        if (password !== confirmPassword) {
+            setError('Passwords do not match')
+            return
+        }
+
+        // Validate terms accepted
+        if (!agreeToTerms) {
+            setError('Please accept the Terms of Service and Privacy Policy')
+            return
+        }
+
         setIsLoading(true)
 
         try {
-            await api.auth.login(email, password, selectedRole)
+            await api.auth.signup(name, email, password, selectedRole)
 
             // Navigate to appropriate dashboard
             const dashboardRoutes: Record<UserRole, string> = {
@@ -58,7 +74,7 @@ export function LoginPage() {
             }
             navigate(dashboardRoutes[selectedRole])
         } catch {
-            setError('Invalid email or password. Please try again.')
+            setError('An error occurred during signup. Please try again.')
         } finally {
             setIsLoading(false)
         }
@@ -85,7 +101,7 @@ export function LoginPage() {
                     Back to Home
                 </Link>
 
-                {/* Login Card */}
+                {/* Signup Card */}
                 <div className="bg-neutral-900/50 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-neutral-800">
                     {/* Logo */}
                     <div className="flex items-center justify-center gap-2 mb-8">
@@ -98,10 +114,10 @@ export function LoginPage() {
                     </div>
 
                     <h1 className="text-xl font-semibold text-white text-center mb-2">
-                        Welcome back
+                        Create your account
                     </h1>
                     <p className="text-sm text-neutral-400 text-center mb-6">
-                        Sign in to access your dashboard
+                        Join the community and start protecting your rights
                     </p>
 
                     {/* Role Selector */}
@@ -129,6 +145,21 @@ export function LoginPage() {
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
+                            <label htmlFor="name" className="block text-sm font-medium text-neutral-400 mb-1.5">
+                                Full Name
+                            </label>
+                            <input
+                                id="name"
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="w-full px-4 py-3 rounded-lg bg-neutral-800/50 border border-neutral-700 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all"
+                                placeholder="John Doe"
+                                required
+                            />
+                        </div>
+
+                        <div>
                             <label htmlFor="email" className="block text-sm font-medium text-neutral-400 mb-1.5">
                                 Email Address
                             </label>
@@ -155,7 +186,44 @@ export function LoginPage() {
                                 className="w-full px-4 py-3 rounded-lg bg-neutral-800/50 border border-neutral-700 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all"
                                 placeholder="••••••••"
                                 required
+                                minLength={8}
                             />
+                        </div>
+
+                        <div>
+                            <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-400 mb-1.5">
+                                Confirm Password
+                            </label>
+                            <input
+                                id="confirmPassword"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                className="w-full px-4 py-3 rounded-lg bg-neutral-800/50 border border-neutral-700 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all"
+                                placeholder="••••••••"
+                                required
+                                minLength={8}
+                            />
+                        </div>
+
+                        {/* Terms Checkbox */}
+                        <div className="flex items-start gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setAgreeToTerms(!agreeToTerms)}
+                                className={`flex-shrink-0 w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${agreeToTerms
+                                    ? 'bg-lime-400 border-lime-400'
+                                    : 'bg-neutral-800/50 border-neutral-700'
+                                    }`}
+                            >
+                                {agreeToTerms && <Check className="h-3 w-3 text-neutral-900" />}
+                            </button>
+                            <label className="text-xs text-neutral-400 cursor-pointer" onClick={() => setAgreeToTerms(!agreeToTerms)}>
+                                I agree to the{' '}
+                                <Link to="#" className="text-lime-400 hover:text-lime-300">Terms of Service</Link>
+                                {' '}and{' '}
+                                <Link to="#" className="text-lime-400 hover:text-lime-300">Privacy Policy</Link>
+                            </label>
                         </div>
 
                         {error && (
@@ -176,69 +244,19 @@ export function LoginPage() {
                             {isLoading ? (
                                 <>
                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                    Signing in...
+                                    Creating account...
                                 </>
                             ) : (
-                                'Sign In'
+                                'Create Account'
                             )}
                         </button>
                     </form>
-
-                    {/* Divider */}
-                    <div className="relative my-6">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-neutral-700" />
-                        </div>
-                        <div className="relative flex justify-center text-xs">
-                            <span className="bg-neutral-900/50 px-2 text-neutral-500">Demo Accounts</span>
-                        </div>
-                    </div>
-
-                    {/* Quick Demo Login */}
-                    <div className="space-y-2">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setEmail('john.tenant@email.com')
-                                setPassword('demo')
-                                setSelectedRole('tenant')
-                            }}
-                            className="w-full text-left text-xs p-2 rounded-lg bg-neutral-800/50 hover:bg-neutral-700 transition-colors border border-neutral-700"
-                        >
-                            <span className="font-medium text-neutral-300">Tenant Demo:</span>
-                            <span className="text-neutral-500 ml-1">john.tenant@email.com</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setEmail('sarah.landlord@email.com')
-                                setPassword('demo')
-                                setSelectedRole('landlord')
-                            }}
-                            className="w-full text-left text-xs p-2 rounded-lg bg-neutral-800/50 hover:bg-neutral-700 transition-colors border border-neutral-700"
-                        >
-                            <span className="font-medium text-neutral-300">Landlord Demo:</span>
-                            <span className="text-neutral-500 ml-1">sarah.landlord@email.com</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setEmail('mike.dao@email.com')
-                                setPassword('demo')
-                                setSelectedRole('dao')
-                            }}
-                            className="w-full text-left text-xs p-2 rounded-lg bg-neutral-800/50 hover:bg-neutral-700 transition-colors border border-neutral-700"
-                        >
-                            <span className="font-medium text-neutral-300">DAO Demo:</span>
-                            <span className="text-neutral-500 ml-1">mike.dao@email.com</span>
-                        </button>
-                    </div>
                 </div>
 
                 {/* Footer */}
                 <p className="text-center text-xs text-neutral-400 mt-6">
-                    Don't have an account?{' '}
-                    <Link to="/signup" className="text-lime-400 hover:text-lime-300 font-medium">Sign up</Link>
+                    Already have an account?{' '}
+                    <Link to="/login" className="text-lime-400 hover:text-lime-300 font-medium">Sign in</Link>
                 </p>
             </motion.div>
         </div>

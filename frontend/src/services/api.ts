@@ -45,6 +45,21 @@ export const authApi = {
         return user
     },
 
+    async signup(name: string, email: string, _password: string, role: string): Promise<User> {
+        await delay(500)
+        // Mock signup - create new user
+        const user: User = {
+            id: `user-${Date.now()}`,
+            email,
+            name,
+            role: role as User['role'],
+            createdAt: new Date().toISOString(),
+        }
+        localStorage.setItem('auth_token', 'mock-token-' + user.id)
+        localStorage.setItem('current_user', JSON.stringify(user))
+        return user
+    },
+
     async logout(): Promise<void> {
         await delay(200)
         localStorage.removeItem('auth_token')

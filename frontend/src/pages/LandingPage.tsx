@@ -139,7 +139,7 @@ export function LandingPage() {
                                 Log in
                             </Link>
                             <Link
-                                to="/login"
+                                to="/signup"
                                 className="inline-flex items-center gap-2 rounded-lg bg-lime-400 px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-lime-300 transition-colors"
                             >
                                 Sign Up Free
@@ -195,7 +195,7 @@ export function LandingPage() {
                                 className="w-full sm:w-80 px-5 py-3 rounded-lg border border-violet-600 bg-violet-800/50 text-white placeholder-violet-300 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent"
                             />
                             <Link
-                                to="/login"
+                                to="/signup"
                                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-lime-400 px-6 py-3 text-sm font-semibold text-neutral-900 hover:bg-lime-300 transition-colors"
                             >
                                 Start my trial
@@ -318,7 +318,7 @@ export function LandingPage() {
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link
-                                to="/login"
+                                to="/signup"
                                 className="inline-flex items-center gap-2 rounded-lg bg-lime-400 px-8 py-4 text-base font-semibold text-neutral-900 hover:bg-lime-300 transition-colors"
                             >
                                 Get Started Free

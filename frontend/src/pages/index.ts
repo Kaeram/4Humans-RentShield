@@ -3,6 +3,7 @@ export { LandingPage } from './LandingPage'
 
 // Auth
 export { LoginPage } from './LoginPage'
+export { SignupPage } from './SignupPage'
 
 // Tenant
 export { TenantDashboard } from './tenant/TenantDashboard'

@@ -1,0 +1,8 @@
+﻿
+> rentshield@0.0.0 build
+> tsc -b && vite build
+
+src/components/AiVerdictPanel.tsx(18,26): error TS6133: 'confidence' is declared but its value is never read.
+src/components/ui/container-scroll-animation.tsx(50,11): error TS6133: 'translate' is declared but its value is never read.
+src/components/ui/encrypted-text.tsx(69,31): error TS6133: 'char' is declared but its value is never read.
+src/pages/tenant/ReportIssue.tsx(40,11): error TS6133: 'navigate' is declared but its value is never read.
