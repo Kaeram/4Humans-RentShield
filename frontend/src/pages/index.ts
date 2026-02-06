@@ -16,4 +16,3 @@ export { LandlordIssueDetail } from './landlord/LandlordIssueDetail'
 
 // DAO
 export { DaoDashboard } from './dao/DaoDashboard'
-export { DaoCaseDetail } from './dao/DaoCaseDetail'

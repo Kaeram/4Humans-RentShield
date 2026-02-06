@@ -9,7 +9,6 @@ import {
     LandlordDashboard,
     LandlordIssueDetail,
     DaoDashboard,
-    DaoCaseDetail,
 } from '@/pages'
 
 function App() {
@@ -31,7 +30,6 @@ function App() {
 
             {/* DAO Routes */}
             <Route path="/dao/dashboard" element={<DaoDashboard />} />
-            <Route path="/dao/case/:id" element={<DaoCaseDetail />} />
         </Routes>
     )
 }

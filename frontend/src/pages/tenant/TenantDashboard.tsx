@@ -6,12 +6,7 @@ import { Navbar, Footer, IssueCard, StatusBadge } from '@/components'
 import { api } from '@/services/api'
 import { Issue } from '@/types'
 
-const quickStats = [
-    { label: 'Total Reports', value: '4', icon: FileText, color: 'text-violet-400' },
-    { label: 'In Progress', value: '2', icon: Clock, color: 'text-amber-400' },
-    { label: 'Resolved', value: '1', icon: TrendingUp, color: 'text-lime-400' },
-    { label: 'Escalated', value: '1', icon: AlertCircle, color: 'text-red-400' },
-]
+
 
 export function TenantDashboard() {
     const [issues, setIssues] = useState<Issue[]>([])
@@ -19,15 +14,20 @@ export function TenantDashboard() {
     const [filter, setFilter] = useState<'all' | 'active' | 'resolved'>('all')
 
     useEffect(() => {
-        const fetchIssues = async () => {
+        const fetchData = async () => {
             try {
-                const data = await api.issues.getByTenantId('tenant-1')
-                setIssues(data)
+                const user = await api.auth.getCurrentUser()
+                if (user) {
+                    const data = await api.issues.getByTenantId(user.id)
+                    setIssues(data)
+                }
+            } catch (error) {
+                console.error('Failed to fetch tenant issues:', error)
             } finally {
                 setIsLoading(false)
             }
         }
-        fetchIssues()
+        fetchData()
     }, [])
 
     const filteredIssues = issues.filter((issue) => {
@@ -35,6 +35,21 @@ export function TenantDashboard() {
         if (filter === 'resolved') return ['resolved', 'dismissed'].includes(issue.status)
         return true
     })
+
+    // Calculate stats dynamically
+    const stats = {
+        total: issues.length,
+        inProgress: issues.filter(i => ['pending', 'in-review'].includes(i.status)).length,
+        resolved: issues.filter(i => ['resolved', 'dismissed'].includes(i.status)).length,
+        escalated: issues.filter(i => i.status === 'escalated').length
+    }
+
+    const quickStats = [
+        { label: 'Total Reports', value: stats.total.toString(), icon: FileText, color: 'text-violet-400' },
+        { label: 'In Progress', value: stats.inProgress.toString(), icon: Clock, color: 'text-amber-400' },
+        { label: 'Resolved', value: stats.resolved.toString(), icon: TrendingUp, color: 'text-lime-400' },
+        { label: 'Escalated', value: stats.escalated.toString(), icon: AlertCircle, color: 'text-red-400' },
+    ]
 
     return (
         <div className="min-h-screen bg-neutral-950 selection:bg-lime-500/30">
@@ -159,7 +174,7 @@ export function TenantDashboard() {
                         <h3 className="font-semibold text-white mb-4">Recent Activity</h3>
                         <div className="bg-neutral-900/50 backdrop-blur-md border border-neutral-800 p-4 rounded-xl">
                             <div className="space-y-4">
-                                {issues.slice(0, 3).flatMap((issue) =>
+                                {issues.length > 0 ? (issues.slice(0, 3).flatMap((issue) =>
                                     issue.timeline.slice(-2).map((event) => (
                                         <div key={event.id} className="flex items-start gap-3">
                                             <div className="h-2 w-2 rounded-full bg-lime-500 mt-2 shadow-[0_0_8px_rgba(132,204,22,0.5)]" />
@@ -172,6 +187,8 @@ export function TenantDashboard() {
                                             <StatusBadge status={issue.status} size="sm" />
                                         </div>
                                     ))
+                                ).filter(Boolean)) : (
+                                    <p className="text-sm text-neutral-500 text-center py-4">No recent activity</p>
                                 )}
                             </div>
                         </div>
