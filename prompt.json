@@ -1,0 +1,173 @@
+{
+  "role": "You are a senior frontend engineer and product designer building a high-fidelity React web application for a client demo under time pressure.",
+  "project_name": "RentShield",
+  "objective": "Build a visually polished, production-style React web application that demonstrates an anonymous tenant issue reporting and DAO-based dispute resolution platform using realistic mock data only. The application must be immediately demo-ready with no backend dependency.",
+  "tech_stack": {
+    "frontend": {
+      "framework": "React 18",
+      "language": "JavaScript (ES6+)",
+      "bundler": "Vite",
+      "styling": "Tailwind CSS",
+      "ui_library": "shadcn/ui",
+      "icons": "lucide-react",
+      "animations": "framer-motion",
+      "charts": "recharts",
+      "maps": "mapbox-gl (heatmap layer)"
+    }
+  },
+  "architecture": {
+    "type": "Single Page Application (SPA)",
+    "routing": "react-router-dom",
+    "state_management": "React Context + hooks",
+    "data_layer": "Static JSON mock data stored locally",
+    "theme": "Light/Dark mode toggle"
+  },
+  "pages": [
+    {
+      "name": "Landing",
+      "route": "/",
+      "description": "Marketing-style homepage explaining the problem, solution, and impact.",
+      "components": [
+        "Hero section with bold headline",
+        "Problem statistics cards",
+        "Feature grid",
+        "How-it-works timeline",
+        "Call-to-action buttons"
+      ]
+    },
+    {
+      "name": "Report Issue",
+      "route": "/report",
+      "description": "Anonymous multi-step tenant issue reporting flow.",
+      "components": [
+        "Step 1: Issue category selection",
+        "Step 2: Description textarea",
+        "Step 3: Image upload (mock preview only)",
+        "Step 4: Severity slider",
+        "Step 5: Location selector (area-level)",
+        "Submit confirmation modal"
+      ]
+    },
+    {
+      "name": "Community Heatmap",
+      "route": "/heatmap",
+      "description": "Visual heatmap of issue density across neighborhoods.",
+      "components": [
+        "Mapbox heatmap",
+        "Category filter pills",
+        "Severity legend",
+        "Tooltip on hover"
+      ]
+    },
+    {
+      "name": "Issues Dashboard",
+      "route": "/dashboard",
+      "description": "Admin-style overview of all reported issues.",
+      "components": [
+        "Table with sorting and filtering",
+        "Status badges",
+        "Search input",
+        "Quick stats header"
+      ]
+    },
+    {
+      "name": "Issue Detail",
+      "route": "/issue/:id",
+      "description": "Detailed view of a single dispute including AI and DAO verdicts.",
+      "components": [
+        "Image gallery",
+        "Issue metadata",
+        "AI verification card",
+        "DAO voting breakdown",
+        "Final verdict badge"
+      ]
+    },
+    {
+      "name": "Property Profile",
+      "route": "/property/:id",
+      "description": "Aggregated landlord/property reputation view.",
+      "components": [
+        "Risk score indicator",
+        "Historical issue chart",
+        "Resolution rate",
+        "Category breakdown"
+      ]
+    },
+    {
+      "name": "DAO Panel",
+      "route": "/dao",
+      "description": "Simulated DAO arbitration interface.",
+      "components": [
+        "Active disputes list",
+        "Evidence viewer",
+        "AI confidence score",
+        "Vote buttons",
+        "Juror incentive tracker"
+      ]
+    }
+  ],
+  "mock_data": {
+    "issues": {
+      "count": 50,
+      "example": {
+        "id": "ISS-012",
+        "category": "Maintenance",
+        "severity": 4,
+        "description": "Severe water leakage from ceiling for over two weeks with no response from landlord.",
+        "location": {
+          "area": "Andheri East",
+          "lat": 19.1136,
+          "lng": 72.8697
+        },
+        "status": "Under Review",
+        "created_at": "2026-01-12",
+        "images": ["leak1.jpg", "leak2.jpg"],
+        "ai_verdict": {
+          "exif_valid": true,
+          "tampering_probability": 0.08,
+          "confidence_score": 0.92,
+          "auto_category": "Maintenance"
+        },
+        "dao_verdict": {
+          "votes_for": 7,
+          "votes_against": 3,
+          "final_decision": "Valid"
+        },
+        "property_id": "PROP-004"
+      }
+    },
+    "properties": {
+      "count": 15,
+      "example": {
+        "property_id": "PROP-004",
+        "area": "Andheri East",
+        "risk_score": 78,
+        "total_reports": 9,
+        "resolved_percentage": 33
+      }
+    }
+  },
+  "ui_guidelines": {
+    "design_style": "Modern gov-tech SaaS",
+    "color_palette": "Neutral slate with accent blue/red",
+    "spacing": "8pt grid system",
+    "typography": "Clean sans-serif",
+    "components": "Use shadcn/ui for all forms, tables, modals, and cards"
+  },
+  "demo_requirements": {
+    "all_routes_functional": true,
+    "no_backend_calls": true,
+    "all_data_preloaded": true,
+    "fast_transitions": true
+  },
+  "output_requirements": {
+    "code_structure": [
+      "src/pages",
+      "src/components",
+      "src/data/mockData.js",
+      "src/context/AppContext.js",
+      "src/styles"
+    ],
+    "quality_bar": "Client-ready UI with no placeholders"
+  }
+}
