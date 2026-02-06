@@ -64,9 +64,7 @@ export function SignupPage() {
         setIsLoading(true)
 
         try {
-            console.log('Attempting signup with:', { email, name, role: selectedRole })
-            const user = await api.auth.signup(name, email, password, selectedRole)
-            console.log('Signup successful:', user)
+            await api.auth.signup(name, email, password, selectedRole)
 
             // Navigate to appropriate dashboard
             const dashboardRoutes: Record<UserRole, string> = {
@@ -75,11 +73,8 @@ export function SignupPage() {
                 dao: '/dao/dashboard',
             }
             navigate(dashboardRoutes[selectedRole])
-        } catch (err: any) {
-            console.error('Signup error:', err)
-            // Show detailed error message
-            const errorMessage = err?.message || 'An error occurred during signup. Please try again.'
-            setError(errorMessage)
+        } catch {
+            setError('An error occurred during signup. Please try again.')
         } finally {
             setIsLoading(false)
         }

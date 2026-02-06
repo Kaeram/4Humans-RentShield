@@ -1,6 +1,17 @@
 import axios, { AxiosInstance } from 'axios'
-import { Issue, AiVerdict, DaoCase, User, UserRole, HeatmapArea, LandlordStats, ReportIssueForm, VoteOption, IssueComment } from '@/types'
-import { mockIssues, mockAiVerdicts, mockDaoCases, mockHeatmapAreas, mockLandlordStats } from '@/data/mockData'
+import {
+    Issue,
+    ReportIssueForm,
+    User,
+    UserRole,
+    LandlordStats,
+    IssueComment,
+    AiVerdict,
+    DaoCase,
+    VoteOption,
+    HeatmapArea
+} from '@/types'
+import { mockDaoCases, mockHeatmapAreas } from '@/data/mockData'
 import { supabase } from '@/lib/supabaseClient'
 
 // API Configuration
@@ -251,11 +262,18 @@ export const issuesApi = {
         }))
     },
 
-    async getByLandlordId(landlordId: string): Promise<Issue[]> {
+    async getByLandlordId(landlordId?: string): Promise<Issue[]> {
+        let targetId = landlordId
+        if (!targetId) {
+            const user = await authApi.getCurrentUser()
+            if (!user) throw new Error('User not authenticated')
+            targetId = user.id
+        }
+
         const { data, error } = await supabase
             .from('issues')
             .select('*')
-            .eq('landlord_id', landlordId)
+            .eq('landlord_id', targetId)
             .order('created_at', { ascending: false })
 
         if (error) throw error
@@ -643,19 +661,173 @@ export const aiApi = {
 
 export const daoApi = {
     async getAllCases(): Promise<DaoCase[]> {
-        // Note: Returning mock data for now as DaoCase structure needs issues + verdicts
-        // Full implementation would require complex joins
-        return mockDaoCases
+        const { data: issues, error } = await supabase
+            .from('issues')
+            .select(`
+                *,
+                ai_verdicts (*),
+                dao_votes (*)
+            `)
+            .in('status', ['escalated', 'resolved']) // Assuming these are relevant for DAO
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        return (issues || []).map((issue: any) => ({
+            id: issue.id,
+            caseId: `CASE-${issue.id.substring(0, 8).toUpperCase()}`,
+            status: issue.status === 'escalated' ? 'voting' : 'closed', // Map issue status to DAO status
+            title: `Dispute: ${issue.category} at ${issue.address}`,
+            description: issue.description,
+            deadline: new Date(new Date(issue.created_at).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from creation
+            votes: (issue.dao_votes || []).map((v: any) => ({
+                id: v.id,
+                voterId: v.juror_id,
+                option: v.vote,
+                timestamp: v.created_at
+            })),
+            issue: {
+                id: issue.id,
+                category: issue.category,
+                severity: issue.severity || 5,
+                status: issue.status,
+                title: `${issue.category} Issue`,
+                description: issue.description || '',
+                propertyAddress: issue.address || '',
+                createdAt: issue.created_at,
+                updatedAt: issue.updated_at || issue.created_at,
+                tenantId: issue.reporter_id || '',
+                landlordId: issue.landlord_id,
+                images: [], // Would need to fetch evidence separately or join
+                timeline: [],
+            },
+            aiVerdict: issue.ai_verdicts?.[0] ? {
+                id: issue.ai_verdicts[0].id,
+                issue_id: issue.ai_verdicts[0].issue_id,
+                confidence_score: issue.ai_verdicts[0].confidence_score,
+                auto_category: issue.ai_verdicts[0].auto_category,
+                raw_output: issue.ai_verdicts[0].raw_output,
+                created_at: issue.ai_verdicts[0].created_at,
+                evidenceAnalysis: issue.ai_verdicts[0].evidence_analysis
+            } : undefined,
+            createdAt: issue.created_at
+        }))
     },
 
     async getCaseById(id: string): Promise<DaoCase | null> {
-        // Note: Returning mock data for now
-        return mockDaoCases.find(c => c.id === id) || null
+        const { data: issue, error } = await supabase
+            .from('issues')
+            .select(`
+                *,
+                ai_verdicts (*),
+                dao_votes (*),
+                evidence (*)
+            `)
+            .eq('id', id)
+            .single()
+
+        if (error) {
+            if (error.code === 'PGRST116') return null
+            throw error
+        }
+
+        return {
+            id: issue.id,
+            caseId: `CASE-${issue.id.substring(0, 8).toUpperCase()}`,
+            status: issue.status === 'escalated' ? 'voting' : 'closed',
+            title: `Dispute: ${issue.category} at ${issue.address}`,
+            description: issue.description,
+            deadline: new Date(new Date(issue.created_at).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            votes: (issue.dao_votes || []).map((v: any) => ({
+                id: v.id,
+                voterId: v.juror_id,
+                option: v.vote,
+                timestamp: v.created_at
+            })),
+            issue: {
+                id: issue.id,
+                category: issue.category,
+                severity: issue.severity || 5,
+                status: issue.status,
+                title: `${issue.category} Issue`,
+                description: issue.description || '',
+                propertyAddress: issue.address || '',
+                createdAt: issue.created_at,
+                updatedAt: issue.updated_at || issue.created_at,
+                tenantId: issue.reporter_id || '',
+                landlordId: issue.landlord_id,
+                images: (issue.evidence || []).map((e: any) => e.file_url),
+                timeline: [],
+            },
+            aiVerdict: issue.ai_verdicts?.[0] ? {
+                id: issue.ai_verdicts[0].id,
+                issue_id: issue.ai_verdicts[0].issue_id,
+                confidence_score: issue.ai_verdicts[0].confidence_score,
+                auto_category: issue.ai_verdicts[0].auto_category,
+                raw_output: issue.ai_verdicts[0].raw_output,
+                created_at: issue.ai_verdicts[0].created_at,
+                evidenceAnalysis: issue.ai_verdicts[0].evidence_analysis
+            } : undefined,
+            createdAt: issue.created_at
+        }
     },
 
     async getPendingCases(): Promise<DaoCase[]> {
-        // Note: Returning mock data for now
-        return mockDaoCases.filter(c => c.status === 'pending' || c.status === 'voting')
+        // Fetch issues that are escalated
+        const { data: issues, error } = await supabase
+            .from('issues')
+            .select(`
+                *,
+                ai_verdicts (*),
+                dao_votes (*),
+                evidence (*)
+            `)
+            .eq('status', 'escalated')
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        return (issues || []).map((issue: any) => ({
+            id: issue.id,
+            caseId: `CASE-${issue.id.substring(0, 8).toUpperCase()}`,
+            status: 'voting', // Escalated issues are in voting phase of DAO
+            title: `Dispute: ${issue.category}`,
+            description: issue.description,
+            deadline: new Date(new Date(issue.created_at).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            votes: (issue.dao_votes || []).map((v: any) => ({
+                id: v.id,
+                voterId: v.juror_id,
+                option: v.vote,
+                timestamp: v.created_at
+            })),
+            issue: {
+                id: issue.id,
+                category: issue.category,
+                severity: issue.severity || 5,
+                status: issue.status,
+                // title: `${issue.category} Issue`,
+                title: issue.category, // Just category name as title for DaoCase issue obj
+                // Or keep it consistent
+                description: issue.description || '',
+                propertyAddress: issue.address || '',
+                createdAt: issue.created_at,
+                updatedAt: issue.updated_at || issue.created_at,
+                tenantId: issue.reporter_id || '',
+                landlordId: issue.landlord_id,
+                images: (issue.evidence || []).map((e: any) => e.file_url),
+                timeline: [],
+            },
+            aiVerdict: issue.ai_verdicts?.[0] ? {
+                id: issue.ai_verdicts[0].id,
+                issue_id: issue.ai_verdicts[0].issue_id,
+                confidence_score: issue.ai_verdicts[0].confidence_score,
+                auto_category: issue.ai_verdicts[0].auto_category,
+                raw_output: issue.ai_verdicts[0].raw_output,
+                created_at: issue.ai_verdicts[0].created_at,
+                evidenceAnalysis: issue.ai_verdicts[0].evidence_analysis
+            } : undefined,
+            createdAt: issue.created_at
+        }))
     },
 
     async vote(caseId: string, option: VoteOption): Promise<void> {
@@ -681,9 +853,45 @@ export const daoApi = {
 
 export const landlordApi = {
     async getStats(landlordId?: string): Promise<LandlordStats> {
-        await delay(200)
-        console.log('Fetching stats for landlord:', landlordId)
-        return mockLandlordStats
+        let targetId = landlordId
+        if (!targetId) {
+            const user = await authApi.getCurrentUser()
+            if (!user || user.role !== 'landlord') {
+                // Return default stats if not a landlord or not authed
+                return {
+                    totalComplaints: 0,
+                    pendingResponses: 0,
+                    reputationScore: 0,
+                    responseRate: 0,
+                    averageResponseTime: 'N/A'
+                }
+            }
+            targetId = user.id
+        }
+
+        const { data: issues, error } = await supabase
+            .from('issues')
+            .select('status, created_at, updated_at')
+            .eq('landlord_id', targetId)
+
+        if (error) throw error
+
+        const total = issues?.length || 0
+        const pending = issues?.filter(i => i.status === 'pending' || i.status === 'in-review').length || 0
+        const resolved = issues?.filter(i => i.status === 'resolved' || i.status === 'dismissed').length || 0
+
+        // Simple reputation logic: 100 - (pending/total * 50) - (escalated/total * 100)
+        // For now just dynamic based on resolved ratio
+        const reputation = total > 0 ? Math.round((resolved / total) * 100) : 100
+        const responseRate = total > 0 ? Math.round(((total - pending) / total) * 100) : 100
+
+        return {
+            totalComplaints: total,
+            pendingResponses: pending,
+            reputationScore: reputation,
+            responseRate: responseRate,
+            averageResponseTime: '2.4 days' // Placeholder for complex calc
+        }
     },
 }
 

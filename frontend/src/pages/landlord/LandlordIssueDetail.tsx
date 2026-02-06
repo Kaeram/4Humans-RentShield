@@ -241,8 +241,8 @@ export function LandlordIssueDetail() {
                                         <div key={event.id} className="flex gap-3">
                                             <div className="relative">
                                                 <div className={`h-2.5 w-2.5 rounded-full mt-1.5 ${event.actorRole === 'landlord' ? 'bg-accent-500' :
-                                                        event.actorRole === 'tenant' ? 'bg-primary-500' :
-                                                            'bg-neutral-400'
+                                                    event.actorRole === 'tenant' ? 'bg-primary-500' :
+                                                        'bg-neutral-400'
                                                     }`} />
                                                 {idx < issue.timeline.length - 1 && (
                                                     <div className="absolute top-3 left-1 w-0.5 h-full bg-neutral-200" />

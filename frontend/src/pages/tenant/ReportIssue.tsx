@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     ArrowLeft,
@@ -11,10 +11,10 @@ import {
     CheckCircle,
     X,
     Loader2,
-    AlertTriangle
+    AlertTriangle,
+    Shield
 } from 'lucide-react'
-import { Navbar } from '@/components'
-import AnimatedShaderBackground from '@/components/ui/animated-shader-background'
+import { Navbar, Footer } from '@/components'
 import { api } from '@/services/api'
 import { IssueCategory, ReportIssueForm } from '@/types'
 
@@ -38,10 +38,8 @@ const steps = [
 ]
 
 export function ReportIssue() {
-    const navigate = useNavigate()
     const [currentStep, setCurrentStep] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [error, setError] = useState('')
     const [formData, setFormData] = useState<ReportIssueForm>({
         propertyAddress: '',
         category: '',
@@ -91,15 +89,11 @@ export function ReportIssue() {
 
     const handleSubmit = async () => {
         setIsSubmitting(true)
-        setError('')
         try {
-            console.log('Creating issue with data:', formData)
             await api.issues.create(formData)
-            console.log('Issue created successfully')
             setCurrentStep(5)
-        } catch (err: any) {
-            console.error('Failed to submit issue:', err)
-            setError(err?.message || 'Failed to submit issue. Please try again.')
+        } catch (error) {
+            console.error('Failed to submit issue:', error)
         } finally {
             setIsSubmitting(false)
         }
@@ -121,64 +115,71 @@ export function ReportIssue() {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-900 relative overflow-hidden">
-            <AnimatedShaderBackground />
+        <div className="min-h-screen bg-neutral-950 selection:bg-lime-500/30">
             <Navbar theme="dark" />
 
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-violet-600/20 rounded-full blur-[120px] mix-blend-screen" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-lime-500/10 rounded-full blur-[120px] mix-blend-screen" />
+            </div>
+
             <main className="pt-24 pb-16 relative z-10">
-                <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
-                    {/* Back Link */}
-                    <Link
-                        to="/tenant/dashboard"
-                        className="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-lime-400 mb-6 transition-colors"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        Back to Dashboard
-                    </Link>
+                <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+                    {/* Header */}
+                    <div className="mb-8">
+                        <Link
+                            to="/tenant/dashboard"
+                            className="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-white mb-6 transition-colors"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Back to Dashboard
+                        </Link>
+                        <h1 className="text-3xl font-display font-bold text-white mb-2">
+                            Report an Issue
+                        </h1>
+                        <p className="text-neutral-400">
+                            Submit a new complaint. Your report will be anonymized and securely stored on the blockchain.
+                        </p>
+                    </div>
 
                     {/* Progress Steps */}
-                    <div className="mb-8">
-                        <div className="flex items-center justify-between">
+                    <div className="mb-8 overflow-x-auto pb-4 sm:pb-0">
+                        <div className="flex items-center justify-between min-w-[300px]">
                             {steps.map((step, idx) => (
-                                <div key={step.id} className="flex items-center">
-                                    <div
-                                        className={`flex items-center justify-center h-10 w-10 rounded-full border-2 transition-colors ${currentStep >= step.id
-                                                ? 'bg-lime-400 border-lime-400 text-neutral-900'
-                                                : 'border-neutral-600 text-neutral-500'
-                                            }`}
-                                    >
-                                        {currentStep > step.id ? (
-                                            <CheckCircle className="h-5 w-5" />
-                                        ) : (
-                                            <step.icon className="h-5 w-5" />
-                                        )}
+                                <div key={step.id} className="flex items-center flex-1">
+                                    <div className="relative flex flex-col items-center group">
+                                        <div
+                                            className={`flex items-center justify-center h-10 w-10 rounded-xl border-2 transition-all duration-300 ${currentStep >= step.id
+                                                ? 'bg-lime-400 border-lime-400 text-neutral-900 shadow-[0_0_15px_rgba(132,204,22,0.3)]'
+                                                : 'bg-neutral-900/50 border-neutral-700 text-neutral-500'
+                                                }`}
+                                        >
+                                            {currentStep > step.id ? (
+                                                <CheckCircle className="h-5 w-5" />
+                                            ) : (
+                                                <step.icon className="h-5 w-5" />
+                                            )}
+                                        </div>
+                                        <span className={`absolute -bottom-6 text-xs font-medium whitespace-nowrap transition-colors ${currentStep >= step.id ? 'text-lime-400' : 'text-neutral-500'
+                                            }`}>
+                                            {step.title}
+                                        </span>
                                     </div>
                                     {idx < steps.length - 1 && (
-                                        <div
-                                            className={`hidden sm:block w-12 lg:w-24 h-0.5 mx-2 ${currentStep > step.id ? 'bg-lime-400' : 'bg-neutral-700'
-                                                }`}
-                                        />
+                                        <div className="flex-1 h-0.5 mx-2 bg-neutral-800 relative">
+                                            <div
+                                                className="absolute inset-y-0 left-0 bg-lime-400 transition-all duration-300"
+                                                style={{ width: currentStep > step.id ? '100%' : '0%' }}
+                                            />
+                                        </div>
                                     )}
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-4">
-                            <h2 className="text-lg font-semibold text-white">
-                                {steps[currentStep - 1].title}
-                            </h2>
-                            <p className="text-sm text-neutral-400">Step {currentStep} of 5</p>
-                        </div>
                     </div>
 
                     {/* Step Content */}
-                    <div className="bg-neutral-900/60 backdrop-blur-xl border border-neutral-800/50 rounded-2xl shadow-2xl p-6">
-                        {/* Error Message */}
-                        {error && (
-                            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                                {error}
-                            </div>
-                        )}
-
+                    <div className="bg-neutral-900/50 backdrop-blur-md border border-neutral-800 rounded-2xl p-6 sm:p-8 mt-8">
                         <AnimatePresence mode="wait">
                             {/* Step 1: Property Address */}
                             {currentStep === 1 && (
@@ -187,23 +188,41 @@ export function ReportIssue() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-4"
+                                    className="space-y-6"
                                 >
                                     <div>
+                                        <h2 className="text-xl font-semibold text-white mb-1">Property Details</h2>
+                                        <p className="text-sm text-neutral-400 mb-6">Where is the issue located?</p>
+
                                         <label htmlFor="address" className="block text-sm font-medium text-neutral-300 mb-2">
                                             Property Address
                                         </label>
-                                        <input
-                                            id="address"
-                                            type="text"
-                                            value={formData.propertyAddress}
-                                            onChange={(e) => setFormData({ ...formData, propertyAddress: e.target.value })}
-                                            className="w-full px-4 py-3 bg-neutral-800/50 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all"
-                                            placeholder="123 Main St, Apt 4B, San Francisco, CA 94102"
-                                        />
-                                        <p className="mt-1.5 text-xs text-neutral-500">
+                                        <div className="relative">
+                                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-500" />
+                                            <input
+                                                id="address"
+                                                type="text"
+                                                value={formData.propertyAddress}
+                                                onChange={(e) => setFormData({ ...formData, propertyAddress: e.target.value })}
+                                                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg py-3 pl-10 pr-4 text-white placeholder-neutral-600 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition-colors"
+                                                placeholder="123 Main St, Apt 4B, San Francisco, CA 94102"
+                                            />
+                                        </div>
+                                        <p className="mt-2 text-xs text-neutral-500">
                                             Enter the full address including apartment/unit number
                                         </p>
+                                    </div>
+
+                                    <div className="bg-violet-900/10 border border-violet-500/20 rounded-lg p-4">
+                                        <div className="flex items-start gap-3">
+                                            <Shield className="h-5 w-5 text-violet-400 mt-0.5" />
+                                            <div>
+                                                <p className="text-sm font-medium text-violet-300">Privacy Notice</p>
+                                                <p className="text-xs text-violet-400/80 mt-1">
+                                                    Your exact location is encrypted. Only verified parties involved in the dispute resolution will have access to this information.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </motion.div>
                             )}
@@ -216,22 +235,25 @@ export function ReportIssue() {
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
                                 >
-                                    <p className="text-sm text-neutral-400 mb-4">
-                                        Select the category that best describes your issue
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <h2 className="text-xl font-semibold text-white mb-1">Issue Category</h2>
+                                    <p className="text-sm text-neutral-400 mb-6">Select the category that best describes your issue</p>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {categories.map((cat) => (
                                             <button
                                                 key={cat.id}
                                                 onClick={() => setFormData({ ...formData, category: cat.id })}
-                                                className={`p-4 rounded-xl border-2 text-left transition-all ${formData.category === cat.id
-                                                        ? 'border-lime-400 bg-lime-400/10'
-                                                        : 'border-neutral-700 hover:border-neutral-600 bg-neutral-800/30'
+                                                className={`group p-4 rounded-xl border text-left transition-all duration-200 hover:scale-[1.02] ${formData.category === cat.id
+                                                    ? 'bg-lime-400/10 border-lime-400'
+                                                    : 'bg-neutral-950 border-neutral-800 hover:border-neutral-700'
                                                     }`}
                                             >
-                                                <span className="text-2xl">{cat.icon}</span>
-                                                <p className="font-medium text-white mt-2">{cat.label}</p>
-                                                <p className="text-xs text-neutral-400 mt-0.5">{cat.description}</p>
+                                                <span className="text-2xl group-hover:scale-110 inline-block transition-transform duration-200">{cat.icon}</span>
+                                                <p className={`font-medium mt-3 transition-colors ${formData.category === cat.id ? 'text-lime-400' : 'text-white'
+                                                    }`}>
+                                                    {cat.label}
+                                                </p>
+                                                <p className="text-xs text-neutral-500 mt-1">{cat.description}</p>
                                             </button>
                                         ))}
                                     </div>
@@ -245,28 +267,38 @@ export function ReportIssue() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-4"
+                                    className="space-y-6"
                                 >
                                     <div>
+                                        <h2 className="text-xl font-semibold text-white mb-1">Description</h2>
+                                        <p className="text-sm text-neutral-400 mb-6">Provide detailed information about the issue</p>
+
                                         <label htmlFor="description" className="block text-sm font-medium text-neutral-300 mb-2">
-                                            Describe the Issue
+                                            Issue Details
                                         </label>
                                         <textarea
                                             id="description"
                                             value={formData.description}
                                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                            className="w-full px-4 py-3 bg-neutral-800/50 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all min-h-[200px]"
-                                            placeholder="Please provide detailed information about the issue. Include when it started, how it affects you, and any previous attempts to resolve it with your landlord."
+                                            className="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-4 text-white placeholder-neutral-600 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition-colors min-h-[200px] resize-y"
+                                            placeholder="Example: The heating system has been broken for 3 days. I notified the landlord on Monday but haven't received a response. The temperature in the apartment is dropping below safe levels..."
                                         />
-                                        <p className="mt-1.5 text-xs text-neutral-500">
-                                            Minimum 20 characters. Be as detailed as possible.
-                                        </p>
+                                        <div className="flex justify-between mt-2">
+                                            <p className="text-xs text-neutral-500">Minimum 20 characters</p>
+                                            <p className={`text-xs ${formData.description.length >= 20 ? 'text-lime-400' : 'text-neutral-500'}`}>
+                                                {formData.description.length} chars
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                                        <AlertTriangle className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
-                                        <p className="text-xs text-yellow-200">
-                                            Avoid including personal identifying information of others. Your own identity is protected.
-                                        </p>
+
+                                    <div className="flex items-start gap-3 p-4 rounded-lg bg-orange-900/10 border border-orange-500/20">
+                                        <AlertTriangle className="h-5 w-5 text-orange-400 mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-medium text-orange-300">Important</p>
+                                            <p className="text-xs text-orange-400/80 mt-1">
+                                                Stick to factual events. Avoid emotional language or personal attacks, as this will be reviewed by the DAO community.
+                                            </p>
+                                        </div>
                                     </div>
                                 </motion.div>
                             )}
@@ -278,13 +310,13 @@ export function ReportIssue() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-4"
+                                    className="space-y-6"
                                 >
                                     <div>
-                                        <label className="block text-sm font-medium text-neutral-300 mb-2">
-                                            Upload Evidence (Optional)
-                                        </label>
-                                        <div className="border-2 border-dashed border-neutral-700 rounded-xl p-6 text-center hover:border-lime-400 transition-colors bg-neutral-800/30">
+                                        <h2 className="text-xl font-semibold text-white mb-1">Evidence</h2>
+                                        <p className="text-sm text-neutral-400 mb-6">Upload photos or documents to support your claim (Optional)</p>
+
+                                        <div className="border-2 border-dashed border-neutral-800 rounded-xl p-8 text-center hover:border-lime-400/50 hover:bg-neutral-900 transition-all cursor-pointer group">
                                             <input
                                                 type="file"
                                                 id="images"
@@ -293,41 +325,47 @@ export function ReportIssue() {
                                                 onChange={handleImageUpload}
                                                 className="hidden"
                                             />
-                                            <label htmlFor="images" className="cursor-pointer">
-                                                <Upload className="h-10 w-10 text-neutral-500 mx-auto mb-3" />
-                                                <p className="text-sm text-neutral-300">
-                                                    <span className="text-lime-400 font-medium">Click to upload</span> or drag and drop
+                                            <label htmlFor="images" className="cursor-pointer w-full h-full block">
+                                                <div className="h-14 w-14 rounded-full bg-neutral-800 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                                                    <Upload className="h-7 w-7 text-neutral-400 group-hover:text-lime-400 transition-colors" />
+                                                </div>
+                                                <p className="text-base font-medium text-white mb-1">
+                                                    <span className="text-lime-400">Click to upload</span> or drag and drop
                                                 </p>
-                                                <p className="text-xs text-neutral-500 mt-1">PNG, JPG, HEIC up to 10MB each</p>
+                                                <p className="text-xs text-neutral-500">PNG, JPG, HEIC up to 10MB each</p>
                                             </label>
                                         </div>
                                     </div>
 
                                     {/* Image Previews */}
                                     {imagePreview.length > 0 && (
-                                        <div className="grid grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                             {imagePreview.map((preview, idx) => (
-                                                <div key={idx} className="relative group aspect-square">
+                                                <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-neutral-800">
                                                     <img
                                                         src={preview}
                                                         alt={`Preview ${idx + 1}`}
-                                                        className="w-full h-full object-cover rounded-lg"
+                                                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
                                                     />
-                                                    <button
-                                                        onClick={() => removeImage(idx)}
-                                                        className="absolute top-2 right-2 p-1 rounded-full bg-neutral-900/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </button>
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <button
+                                                            onClick={() => removeImage(idx)}
+                                                            className="p-2 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-colors"
+                                                        >
+                                                            <X className="h-5 w-5" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
                                     )}
 
-                                    <p className="text-xs text-neutral-500">
-                                        Photos will be analyzed by our AI for authenticity and relevant details.
-                                        EXIF metadata will be verified but kept private.
-                                    </p>
+                                    <div className="flex items-center gap-3 text-xs text-neutral-500">
+                                        <Shield className="h-4 w-4" />
+                                        <p>
+                                            Photos are analyzed by AI for authenticity. EXIF metadata is verified but kept private.
+                                        </p>
+                                    </div>
                                 </motion.div>
                             )}
 
@@ -337,22 +375,19 @@ export function ReportIssue() {
                                     key="step5"
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="text-center py-8"
+                                    className="text-center py-12"
                                 >
-                                    <div className="h-16 w-16 rounded-full bg-lime-400/20 flex items-center justify-center mx-auto mb-4">
-                                        <CheckCircle className="h-8 w-8 text-lime-400" />
+                                    <div className="h-20 w-20 rounded-full bg-lime-400/20 flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(132,204,22,0.2)]">
+                                        <CheckCircle className="h-10 w-10 text-lime-400" />
                                     </div>
-                                    <h3 className="text-xl font-semibold text-white mb-2">
+                                    <h3 className="text-2xl font-bold text-white mb-3">
                                         Issue Submitted Successfully!
                                     </h3>
-                                    <p className="text-neutral-400 mb-6">
-                                        Your issue has been submitted and is being processed. Our AI will analyze your evidence shortly.
+                                    <p className="text-neutral-400 mb-8 max-w-md mx-auto">
+                                        Your issue has been recorded on the blockchain and is being processed. Our AI Agent is analyzing your evidence now.
                                     </p>
-                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                        <Link
-                                            to="/tenant/dashboard"
-                                            className="px-6 py-3 bg-lime-400 text-neutral-900 rounded-lg font-medium hover:bg-lime-300 transition-colors"
-                                        >
+                                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                        <Link to="/tenant/dashboard" className="px-6 py-3 rounded-lg bg-lime-400 text-neutral-900 font-semibold hover:bg-lime-300 transition-colors">
                                             View Dashboard
                                         </Link>
                                         <button
@@ -361,7 +396,7 @@ export function ReportIssue() {
                                                 setFormData({ propertyAddress: '', category: '', description: '', images: [] })
                                                 setImagePreview([])
                                             }}
-                                            className="px-6 py-3 bg-neutral-800 text-white rounded-lg font-medium hover:bg-neutral-700 transition-colors"
+                                            className="px-6 py-3 rounded-lg bg-neutral-800 text-white font-medium hover:bg-neutral-700 transition-colors border border-neutral-700"
                                         >
                                             Report Another Issue
                                         </button>
@@ -376,7 +411,7 @@ export function ReportIssue() {
                                 <button
                                     onClick={handleBack}
                                     disabled={currentStep === 1}
-                                    className="px-6 py-3 bg-neutral-800 text-white rounded-lg font-medium hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                                 >
                                     <ArrowLeft className="h-4 w-4" />
                                     Back
@@ -386,7 +421,7 @@ export function ReportIssue() {
                                     <button
                                         onClick={handleNext}
                                         disabled={!canProceed()}
-                                        className="px-6 py-3 bg-lime-400 text-neutral-900 rounded-lg font-medium hover:bg-lime-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                        className="px-6 py-2.5 rounded-lg bg-lime-400 text-neutral-900 text-sm font-semibold hover:bg-lime-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-[0_0_15px_rgba(132,204,22,0.3)] disabled:shadow-none"
                                     >
                                         Continue
                                         <ArrowRight className="h-4 w-4" />
@@ -395,16 +430,16 @@ export function ReportIssue() {
                                     <button
                                         onClick={handleSubmit}
                                         disabled={isSubmitting}
-                                        className="px-6 py-3 bg-lime-400 text-neutral-900 rounded-lg font-medium hover:bg-lime-300 transition-colors disabled:opacity-50 flex items-center gap-2"
+                                        className="px-6 py-2.5 rounded-lg bg-lime-400 text-neutral-900 text-sm font-semibold hover:bg-lime-300 disabled:opacity-70 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-[0_0_15px_rgba(132,204,22,0.3)]"
                                     >
                                         {isSubmitting ? (
                                             <>
                                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                                Submitting...
+                                                Processing...
                                             </>
                                         ) : (
                                             <>
-                                                Submit Issue
+                                                Submit Report
                                                 <CheckCircle className="h-4 w-4" />
                                             </>
                                         )}
@@ -415,6 +450,8 @@ export function ReportIssue() {
                     </div>
                 </div>
             </main>
+
+            <Footer />
         </div>
     )
 }
