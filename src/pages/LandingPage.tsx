@@ -1,17 +1,23 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
+import { FloatingNav } from '@/components/ui/floating-navbar'
+import { ThreeDMarquee } from '@/components/ui/3d-marquee'
 import { Link } from 'react-router-dom'
 import {
     Shield,
     ArrowRight,
     ChevronDown,
     Check,
-    Star,
+    Play,
     Users,
-    Bot,
-    Scale,
-    MapPin,
-    Play
+    Home,
+    MessageCircle,
+    User,
+    Lock,
+    FileCheck,
+    BarChart3,
+    Medal,
+    Gavel
 } from 'lucide-react'
 import AnimatedShaderBackground from '@/components/ui/animated-shader-background'
 import { TypewriterEffectSmooth } from '@/components/ui/typewriter-effect'
@@ -21,71 +27,68 @@ import { HousingHeatmap } from '@/components/ui/housing-heatmap'
 const heroWords = [
     { text: "Resolve" },
     { text: "Housing" },
-    { text: "Disputes", newLine: true },
-    { text: "With", className: "text-lime-400" },
-    { text: "Confidence", className: "text-lime-400" },
+    { text: "Disputes" },
+    { text: "With", newLine: true },
+    { text: "Confidence.", className: "text-lime-400" },
 ]
 
 const navItems = [
-    { label: 'Platform', hasDropdown: true },
-    { label: 'Solutions', hasDropdown: true },
-    { label: 'Resources', hasDropdown: true },
-    { label: 'Pricing', hasDropdown: false },
+    { label: "Features", hasDropdown: true },
+    { label: "How it Works", hasDropdown: false },
+    { label: "Community", hasDropdown: false },
+    { label: "Resources", hasDropdown: true },
 ]
 
-const features = [
+
+
+const featureCards = [
     {
-        icon: Bot,
-        title: 'AI-Powered Verdicts',
-        description: 'Our AI analyzes evidence, photos, and documentation to provide unbiased assessments of tenant-landlord disputes.',
+        title: "Anonymous Reporting",
+        description: "Report issues without revealing your identity. Your privacy is protected by design.",
+        icon: <Lock className="w-6 h-6 text-lime-400" />
     },
     {
-        icon: Scale,
-        title: 'DAO Governance',
-        description: 'Community jurors review escalated cases through blind voting, ensuring fair and transparent decisions.',
+        title: "AI Verification",
+        description: "Advanced image analysis detects tampering and verifies evidence authenticity.",
+        icon: <FileCheck className="w-6 h-6 text-lime-400" />
     },
     {
-        icon: Shield,
-        title: 'Identity Protection',
-        description: 'Tenant identities are fully protected. Report issues without fear of retaliation.',
+        title: "DAO Arbitration",
+        description: "Decentralized jury of verified community members ensures fair dispute resolution.",
+        icon: <Users className="w-6 h-6 text-lime-400" />
     },
     {
-        icon: MapPin,
-        title: 'Housing Heatmaps',
-        description: 'Visualize issue density across neighborhoods to make informed housing decisions.',
+        title: "Community Heatmaps",
+        description: "View issue density across neighborhoods to make informed housing decisions.",
+        icon: <BarChart3 className="w-6 h-6 text-lime-400" />
     },
+    {
+        title: "Landlord Ratings",
+        description: "Aggregated reputation scores help tenants avoid problematic properties.",
+        icon: <Medal className="w-6 h-6 text-lime-400" />
+    },
+    {
+        title: "Transparent Verdicts",
+        description: "All decisions are recorded on-chain for complete transparency and accountability.",
+        icon: <Gavel className="w-6 h-6 text-lime-400" />
+    }
 ]
 
-const stats = [
-    { value: '10,000+', label: 'Issues Resolved' },
-    { value: '95%', label: 'User Satisfaction' },
-    { value: '48hrs', label: 'Average Resolution' },
-    { value: '500+', label: 'DAO Members' },
+const floatingNavItems = [
+    { name: "Home", link: "/", icon: <Home className="h-4 w-4 text-neutral-500 dark:text-white" /> },
+    { name: "About", link: "/about", icon: <User className="h-4 w-4 text-neutral-500 dark:text-white" /> },
+    { name: "Contact", link: "/contact", icon: <MessageCircle className="h-4 w-4 text-neutral-500 dark:text-white" /> },
 ]
 
-const testimonials = [
-    {
-        quote: "RentShield helped me document and resolve a mold issue that my landlord had ignored for months. The AI analysis was spot-on.",
-        author: "Sarah M.",
-        role: "Tenant, San Francisco",
-        avatar: "SM",
-    },
-    {
-        quote: "As a landlord, I appreciate the transparency. It helps me address issues quickly and maintain a good reputation.",
-        author: "David L.",
-        role: "Property Owner",
-        avatar: "DL",
-    },
-    {
-        quote: "The DAO voting system is genius. It ensures fair outcomes without bias from either party.",
-        author: "Michael R.",
-        role: "DAO Member",
-        avatar: "MR",
-    },
-]
+
 
 export function LandingPage() {
     const [email, setEmail] = useState('')
+    const { scrollY } = useScroll();
+
+    // Hide main navbar when scrolling down (opacity 0 when scrollY > 100)
+    const navbarOpacity = useTransform(scrollY, [0, 100], [1, 0]);
+    const navbarPointerEvents = useTransform(scrollY, [0, 100], ['auto', 'none']);
 
     return (
         <div className="min-h-screen bg-neutral-900 relative">
@@ -94,8 +97,14 @@ export function LandingPage() {
                 <AnimatedShaderBackground />
             </div>
 
-            {/* Navbar */}
-            <nav className="fixed top-0 left-0 right-0 z-50 bg-neutral-900/80 backdrop-blur-md">
+            {/* Floating Navbar */}
+            <FloatingNav navItems={floatingNavItems} />
+
+            {/* Main Navbar */}
+            <motion.nav
+                style={{ opacity: navbarOpacity, pointerEvents: navbarPointerEvents as any }}
+                className="fixed top-0 left-0 right-0 z-50 bg-neutral-900/80 backdrop-blur-md"
+            >
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 items-center justify-between">
                         {/* Logo */}
@@ -139,7 +148,7 @@ export function LandingPage() {
                         </div>
                     </div>
                 </div>
-            </nav>
+            </motion.nav>
 
             {/* Announcement Banner */}
             <div className="pt-16 bg-lime-100">
@@ -154,8 +163,8 @@ export function LandingPage() {
             </div>
 
             {/* Hero Section */}
-            <section className="relative z-10 overflow-hidden min-h-[70vh] flex items-center pt-16">
-                <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+            <section className="relative z-10 overflow-hidden min-h-[40vh] flex items-center pt-8 pb-0">
+                <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="text-center flex flex-col items-center">
                         <TypewriterEffectSmooth
                             words={heroWords}
@@ -219,7 +228,7 @@ export function LandingPage() {
             </section>
 
             {/* Housing Heatmap Section with Scroll Animation */}
-            <section className="relative z-10">
+            <section className="relative z-10 -mt-24">
                 <ContainerScroll
                     titleComponent={
                         <>
@@ -237,68 +246,34 @@ export function LandingPage() {
                 </ContainerScroll>
             </section>
 
-            {/* Stats Section */}
-            <section className="relative z-10 py-16 bg-neutral-50">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        {stats.map((stat, idx) => (
-                            <motion.div
-                                key={stat.label}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: idx * 0.1 }}
-                                className="text-center"
-                            >
-                                <p className="font-display text-3xl md:text-4xl font-bold text-violet-600">
-                                    {stat.value}
-                                </p>
-                                <p className="mt-1 text-sm text-neutral-600">{stat.label}</p>
-                            </motion.div>
-                        ))}
-                    </div>
+            {/* Features Section with 3D Marquee */}
+            <section className="relative z-10 pt-0 pb-20 -mt-20 overflow-hidden">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-12 text-center">
+                    <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
+                        How RentShield <span className="text-lime-400">Protects You</span>
+                    </h2>
+                    <p className="text-lg text-neutral-400 max-w-2xl mx-auto">
+                        A comprehensive platform designed to level the playing field between tenants and landlords.
+                    </p>
                 </div>
-            </section>
 
-            {/* Features Section */}
-            <section className="relative z-10 py-20 bg-white">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="font-display text-3xl md:text-4xl font-bold text-neutral-900">
-                            Everything you need for fair housing
-                        </h2>
-                        <p className="mt-4 text-lg text-neutral-600 max-w-2xl mx-auto">
-                            From AI-powered evidence analysis to decentralized dispute resolution, we've got you covered.
-                        </p>
+                <ThreeDMarquee items={featureCards.map((card, idx) => (
+                    <div key={idx} className="group/card bg-neutral-900/50 backdrop-blur-md border border-neutral-800 p-6 rounded-xl flex flex-col gap-4 hover:border-lime-500/50 transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:shadow-lime-500/10 hover:bg-neutral-800/80 cursor-pointer h-full relative hover:z-20 group-hover/strip:blur-[2px] group-hover/strip:opacity-40 hover:!blur-none hover:!opacity-100">
+                        <div className="w-12 h-12 rounded-lg bg-lime-500/10 flex items-center justify-center group-hover/card:bg-lime-500/20 transition-all duration-300">
+                            <div className="text-lime-400 transition-colors">
+                                {card.icon}
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-white mb-2 text-lg">{card.title}</h3>
+                            <p className="text-sm text-neutral-400 leading-relaxed">{card.description}</p>
+                        </div>
                     </div>
-
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {features.map((feature, idx) => (
-                            <motion.div
-                                key={feature.title}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: idx * 0.1 }}
-                                className="p-6 rounded-2xl bg-white border border-neutral-200 hover:border-violet-300 hover:shadow-lg transition-all"
-                            >
-                                <div className="h-12 w-12 rounded-xl bg-violet-100 flex items-center justify-center mb-4">
-                                    <feature.icon className="h-6 w-6 text-violet-600" />
-                                </div>
-                                <h3 className="font-display text-lg font-semibold text-neutral-900 mb-2">
-                                    {feature.title}
-                                </h3>
-                                <p className="text-sm text-neutral-600 leading-relaxed">
-                                    {feature.description}
-                                </p>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
+                ))} />
             </section>
 
             {/* Video Section */}
-            <section className="relative z-10 py-20 bg-neutral-900">
+            <section className="relative z-10 py-20 bg-transparent">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="grid lg:grid-cols-2 gap-12 items-center">
                         <div>
@@ -320,7 +295,7 @@ export function LandingPage() {
                             </ul>
                         </div>
                         <div className="relative">
-                            <div className="aspect-video rounded-2xl bg-neutral-800 flex items-center justify-center overflow-hidden">
+                            <div className="aspect-video rounded-2xl bg-neutral-800/80 backdrop-blur-sm border border-neutral-700 flex items-center justify-center overflow-hidden">
                                 <button className="h-20 w-20 rounded-full bg-lime-400 flex items-center justify-center hover:bg-lime-300 transition-colors">
                                     <Play className="h-8 w-8 text-neutral-900 ml-1" />
                                 </button>
@@ -331,79 +306,38 @@ export function LandingPage() {
                 </div>
             </section>
 
-            {/* Testimonials */}
-            <section className="relative z-10 py-20 bg-white">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="font-display text-3xl md:text-4xl font-bold text-neutral-900">
-                            Trusted by thousands
-                        </h2>
-                        <p className="mt-4 text-lg text-neutral-600">
-                            Join the community making housing fair for everyone.
-                        </p>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {testimonials.map((testimonial, idx) => (
-                            <motion.div
-                                key={testimonial.author}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: idx * 0.1 }}
-                                className="p-6 rounded-2xl bg-violet-50 border border-violet-100"
-                            >
-                                <div className="flex gap-1 mb-4">
-                                    {[...Array(5)].map((_, i) => (
-                                        <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                                    ))}
-                                </div>
-                                <p className="text-neutral-700 mb-6">"{testimonial.quote}"</p>
-                                <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-full bg-violet-200 flex items-center justify-center text-sm font-medium text-violet-700">
-                                        {testimonial.avatar}
-                                    </div>
-                                    <div>
-                                        <p className="font-medium text-neutral-900">{testimonial.author}</p>
-                                        <p className="text-sm text-neutral-500">{testimonial.role}</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
             {/* Final CTA */}
-            <section className="relative z-10 py-20 bg-gradient-to-br from-violet-900 to-violet-800">
-                <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-                    <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-6">
-                        Ready to resolve disputes fairly?
-                    </h2>
-                    <p className="text-lg text-violet-200 mb-8 max-w-2xl mx-auto">
-                        Join thousands of tenants, landlords, and community members building a fairer housing future.
-                    </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link
-                            to="/login"
-                            className="inline-flex items-center gap-2 rounded-lg bg-lime-400 px-8 py-4 text-base font-semibold text-neutral-900 hover:bg-lime-300 transition-colors"
-                        >
-                            Get Started Free
-                            <ArrowRight className="h-5 w-5" />
-                        </Link>
-                        <Link
-                            to="#"
-                            className="inline-flex items-center gap-2 rounded-lg border border-violet-500 px-8 py-4 text-base font-semibold text-white hover:bg-violet-800 transition-colors"
-                        >
-                            <Users className="h-5 w-5" />
-                            Talk to Sales
-                        </Link>
+            <section className="relative z-10 py-20 bg-transparent">
+                <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                    <div className="bg-neutral-900/50 backdrop-blur-md border border-white/10 rounded-3xl p-8 md:p-12 text-center shadow-2xl">
+                        <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-6">
+                            Ready to resolve disputes fairly?
+                        </h2>
+                        <p className="text-lg text-neutral-300 mb-8 max-w-2xl mx-auto">
+                            Join thousands of tenants, landlords, and community members building a fairer housing future.
+                        </p>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <Link
+                                to="/login"
+                                className="inline-flex items-center gap-2 rounded-lg bg-lime-400 px-8 py-4 text-base font-semibold text-neutral-900 hover:bg-lime-300 transition-colors"
+                            >
+                                Get Started Free
+                                <ArrowRight className="h-5 w-5" />
+                            </Link>
+                            <Link
+                                to="#"
+                                className="inline-flex items-center gap-2 rounded-lg border border-neutral-600 px-8 py-4 text-base font-semibold text-white hover:bg-neutral-800 hover:border-neutral-500 transition-all bg-black/20"
+                            >
+                                <Users className="h-5 w-5" />
+                                Talk to Sales
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* Footer */}
-            <footer className="relative z-10 bg-neutral-900 py-12">
+            <footer className="relative z-10 bg-black/40 backdrop-blur-md border-t border-white/10 py-12">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="flex items-center gap-2">
