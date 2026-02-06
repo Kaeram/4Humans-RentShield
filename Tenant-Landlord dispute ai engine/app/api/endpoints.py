@@ -21,6 +21,7 @@ from app.config import get_settings
 from app.models.requests import (
     BatchClassificationRequest,
     CaseAnalysisRequest,
+    ImageEvidenceRequest,
     IssueClassificationRequest,
 )
 from app.models.responses import (
@@ -29,11 +30,14 @@ from app.models.responses import (
     ErrorResponse,
     EvidenceValidation,
     HealthCheck,
+    ImageEvidenceAnalysis,
     IssueClassification,
 )
 from app.services.case_analyzer import DisputeCaseAnalyzer
+from app.services.evidence_pipeline import EvidencePipeline
 from app.services.evidence_validator import EvidenceValidator
 from app.services.llm_service import OllamaLLMService
+from app.services.vision_service import VisionService
 from app.utils.exceptions import (
     AnalysisError,
     ExifExtractionError,
@@ -61,6 +65,16 @@ def get_evidence_validator() -> EvidenceValidator:
 def get_case_analyzer() -> DisputeCaseAnalyzer:
     """Get case analyzer instance."""
     return DisputeCaseAnalyzer(get_llm_service())
+
+
+def get_evidence_pipeline() -> EvidencePipeline:
+    """Get evidence pipeline instance."""
+    return EvidencePipeline()
+
+
+def get_vision_service() -> VisionService:
+    """Get vision service instance."""
+    return VisionService()
 
 
 # ============================================================================
@@ -501,3 +515,259 @@ async def batch_classify(
                 "request_id": request_id,
             },
         )
+
+
+# ============================================================================
+# Multimodal Image Evidence Analysis
+# ============================================================================
+
+@router.post(
+    "/api/v1/analyze-image-evidence",
+    response_model=ImageEvidenceAnalysis,
+    summary="Analyze Image Evidence",
+    description="Perform multimodal evidence verification using LLaVA vision analysis and Mistral reasoning.",
+    tags=["Evidence"],
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid image or request"},
+        500: {"model": ErrorResponse, "description": "Analysis error"},
+        504: {"model": ErrorResponse, "description": "Analysis timeout"},
+    },
+)
+async def analyze_image_evidence(
+    request: ImageEvidenceRequest,
+) -> ImageEvidenceAnalysis:
+    """
+    Perform multimodal evidence analysis.
+    
+    This endpoint combines:
+    - LLaVA vision model for image understanding
+    - EXIF metadata extraction and validation
+    - Mistral LLM for claim-evidence consistency analysis
+    
+    Pipeline:
+    1. Download image from URL
+    2. Extract and validate EXIF metadata
+    3. Analyze image content with LLaVA
+    4. Compare claim, image analysis, and metadata with Mistral
+    5. Calculate final evidence score
+    
+    Timeout: 90 seconds for complete pipeline.
+    
+    Example:
+        POST /api/v1/analyze-image-evidence
+        {
+            "image_url": "https://storage.example.com/evidence/damage.jpg",
+            "claim_text": "Water damage in kitchen ceiling from upstairs leak",
+            "incident_date": "2024-01-15T00:00:00Z"
+        }
+    """
+    request_id = set_request_id()
+    
+    logger.info(
+        "Analyze image evidence request received",
+        url=request.image_url[:100],
+        claim_length=len(request.claim_text),
+        has_incident_date=request.incident_date is not None,
+    )
+    
+    try:
+        pipeline = get_evidence_pipeline()
+        result = pipeline.analyze_evidence(
+            image_url=request.image_url,
+            claim_text=request.claim_text,
+            incident_date=request.incident_date,
+        )
+        result.request_id = request_id
+        
+        logger.info(
+            "Image evidence analysis completed",
+            final_score=result.final_evidence_score,
+            trust_level=result.trust_level.value,
+        )
+        
+        return result
+        
+    except InvalidImageError as e:
+        logger.error("Invalid image error", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.to_dict(),
+        )
+    except LLMTimeoutError as e:
+        logger.error("Analysis timeout", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=e.to_dict(),
+        )
+    except LLMConnectionError as e:
+        logger.error("LLM connection error", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=e.to_dict(),
+        )
+    except AnalysisError as e:
+        logger.error("Analysis error", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=e.to_dict(),
+        )
+    except Exception as e:
+        logger.error("Unexpected error during image evidence analysis", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "internal_error",
+                "message": str(e),
+                "request_id": request_id,
+            },
+        )
+
+
+# ============================================================================
+# Image Evidence Analysis (File Upload - for testing)
+# ============================================================================
+
+@router.post(
+    "/api/v1/analyze-image-evidence-upload",
+    response_model=ImageEvidenceAnalysis,
+    summary="Analyze Image Evidence (Upload)",
+    description="Upload an image file for multimodal evidence verification. Use this for testing.",
+    tags=["Evidence"],
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid image or request"},
+        500: {"model": ErrorResponse, "description": "Analysis error"},
+    },
+)
+async def analyze_image_evidence_upload(
+    image: UploadFile = File(..., description="Image file (JPG/PNG, max 10MB)"),
+    claim_text: str = Form(..., description="Tenant's claim or complaint"),
+    incident_date: Optional[str] = Form(None, description="ISO datetime of incident"),
+) -> ImageEvidenceAnalysis:
+    """
+    Analyze uploaded image evidence (for testing).
+    
+    This is a file-upload variant of the main endpoint for testing purposes.
+    In production, use /api/v1/analyze-image-evidence with image URLs.
+    """
+    request_id = set_request_id()
+    settings = get_settings()
+    
+    logger.info(
+        "Analyze image evidence upload request",
+        filename=image.filename,
+        claim_length=len(claim_text),
+    )
+    
+    # Validate file type
+    if image.filename:
+        ext = Path(image.filename).suffix.lower()
+        if ext not in settings.ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": "invalid_file_type",
+                    "message": f"Invalid file type. Allowed: {', '.join(settings.ALLOWED_EXTENSIONS)}",
+                    "request_id": request_id,
+                },
+            )
+    
+    temp_path = None
+    try:
+        # Save uploaded file
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=Path(image.filename or "image.jpg").suffix,
+            dir=str(settings.upload_path / "temp"),
+        ) as temp_file:
+            shutil.copyfileobj(image.file, temp_file)
+            temp_path = temp_file.name
+        
+        # Validate file size
+        file_size = os.path.getsize(temp_path)
+        if file_size > settings.MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": "file_too_large",
+                    "message": f"File too large. Max: {settings.MAX_FILE_SIZE // (1024*1024)}MB",
+                    "request_id": request_id,
+                },
+            )
+        
+        # Run pipeline directly with local file
+        from app.services.evidence_pipeline import EvidencePipeline
+        from app.services.vision_service import VisionService
+        
+        vision_service = get_vision_service()
+        evidence_validator = get_evidence_validator()
+        llm_service = get_llm_service()
+        
+        # Extract EXIF
+        exif_data = evidence_validator.extract_exif(temp_path)
+        exif_authenticity = evidence_validator.calculate_authenticity_score(exif_data)
+        
+        # LLaVA analysis
+        llava_result = vision_service.analyze_image(temp_path)
+        
+        # Build pipeline for remaining steps
+        pipeline = EvidencePipeline(
+            vision_service=vision_service,
+            evidence_validator=evidence_validator,
+            llm_service=llm_service,
+        )
+        
+        vision_analysis = pipeline._build_vision_analysis(llava_result)
+        
+        # Multimodal reasoning
+        multimodal_verdict = pipeline._perform_multimodal_reasoning(
+            claim_text=claim_text,
+            llava_result=llava_result,
+            exif_data=exif_data,
+            incident_date=incident_date,
+        )
+        
+        # Calculate score
+        final_score = pipeline._calculate_final_score(
+            exif_authenticity=exif_authenticity,
+            llava_confidence=vision_analysis.confidence,
+            consistency_score=multimodal_verdict.consistency_score,
+        )
+        
+        trust_level = evidence_validator.get_trust_level(final_score)
+        
+        result = ImageEvidenceAnalysis(
+            exif_analysis=exif_data,
+            vision_analysis=vision_analysis,
+            multimodal_verdict=multimodal_verdict,
+            final_evidence_score=final_score,
+            trust_level=trust_level,
+            request_id=request_id,
+        )
+        
+        logger.info(
+            "Image evidence upload analysis completed",
+            final_score=final_score,
+            trust_level=trust_level.value,
+        )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error during upload analysis", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "internal_error",
+                "message": str(e),
+                "request_id": request_id,
+            },
+        )
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.unlink(temp_path)
+            except Exception:
+                pass
+

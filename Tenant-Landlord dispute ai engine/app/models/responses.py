@@ -461,6 +461,10 @@ class DAORecommendation(BaseModel):
         description="Estimated time to resolution",
         json_schema_extra={"example": "7-14 days"},
     )
+    vision_analyses: Optional[list["ImageEvidenceAnalysis"]] = Field(
+        default=None,
+        description="LLaVA vision analysis results for evidence images (if enabled)",
+    )
     request_id: Optional[str] = Field(
         default=None,
         description="Unique request ID for tracing",
@@ -606,3 +610,185 @@ class BatchClassificationResponse(BaseModel):
         default=None,
         description="Unique request ID for tracing",
     )
+
+
+# ============================================================================
+# Vision Analysis Models (LLaVA Pipeline)
+# ============================================================================
+
+class CleanlinessLevelEnum(str, Enum):
+    """Cleanliness levels for image analysis."""
+    CLEAN = "clean"
+    AVERAGE = "average"
+    DIRTY = "dirty"
+    UNSANITARY = "unsanitary"
+
+
+class LocationTypeEnum(str, Enum):
+    """Location type classification."""
+    INDOOR = "indoor"
+    OUTDOOR = "outdoor"
+    UNCLEAR = "unclear"
+
+
+class VisionAnalysis(BaseModel):
+    """
+    LLaVA image analysis result.
+    
+    Contains structured scene description focusing on housing-related
+    damage, safety hazards, and maintenance issues.
+    
+    Example:
+        >>> analysis = VisionAnalysis(
+        ...     scene_summary="Kitchen ceiling shows water damage with visible mold growth",
+        ...     detected_objects=["ceiling", "water stain", "mold"],
+        ...     damage_detected=["water damage", "mold growth"],
+        ...     safety_hazards=["potential mold spores"],
+        ...     cleanliness_level="dirty",
+        ...     indoor_outdoor="indoor",
+        ...     confidence=85
+        ... )
+    """
+    
+    scene_summary: str = Field(
+        ...,
+        description="2-sentence description of the scene",
+        json_schema_extra={"example": "Kitchen ceiling showing significant water damage with visible mold growth. Dark staining indicates prolonged water exposure."},
+    )
+    detected_objects: list[str] = Field(
+        default_factory=list,
+        description="Objects detected in the image",
+        json_schema_extra={"example": ["ceiling", "water stain", "mold", "light fixture"]},
+    )
+    damage_detected: list[str] = Field(
+        default_factory=list,
+        description="Types of damage identified",
+        json_schema_extra={"example": ["water damage", "mold growth", "paint peeling"]},
+    )
+    safety_hazards: list[str] = Field(
+        default_factory=list,
+        description="Safety hazards identified",
+        json_schema_extra={"example": ["mold spores", "electrical hazard near water"]},
+    )
+    cleanliness_level: CleanlinessLevelEnum = Field(
+        ...,
+        description="Overall cleanliness assessment",
+        json_schema_extra={"example": "dirty"},
+    )
+    indoor_outdoor: LocationTypeEnum = Field(
+        ...,
+        description="Location type classification",
+        json_schema_extra={"example": "indoor"},
+    )
+    confidence: int = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Confidence score for the analysis (0-100)",
+        json_schema_extra={"example": 85},
+    )
+
+
+class MultimodalVerdict(BaseModel):
+    """
+    Mistral multimodal reasoning result.
+    
+    Compares tenant claim, image analysis, and EXIF metadata
+    to determine evidence consistency and fraud risk.
+    
+    Example:
+        >>> verdict = MultimodalVerdict(
+        ...     image_supports_claim=True,
+        ...     consistency_score=82,
+        ...     evidence_strength=75,
+        ...     detected_inconsistencies=[],
+        ...     possible_fraud_signals=[],
+        ...     reasoning="Image shows water damage consistent with tenant's claim"
+        ... )
+    """
+    
+    image_supports_claim: bool = Field(
+        ...,
+        description="Whether the image supports the tenant's claim",
+        json_schema_extra={"example": True},
+    )
+    consistency_score: int = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Score indicating consistency between claim and evidence (0-100)",
+        json_schema_extra={"example": 82},
+    )
+    evidence_strength: int = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Overall strength of the evidence (0-100)",
+        json_schema_extra={"example": 75},
+    )
+    detected_inconsistencies: list[str] = Field(
+        default_factory=list,
+        description="Inconsistencies found between claim and evidence",
+        json_schema_extra={"example": ["Photo timestamp is 3 days after reported incident"]},
+    )
+    possible_fraud_signals: list[str] = Field(
+        default_factory=list,
+        description="Potential fraud indicators detected",
+        json_schema_extra={"example": []},
+    )
+    reasoning: str = Field(
+        ...,
+        description="Short explanation of the verdict",
+        json_schema_extra={"example": "The image clearly shows water damage on the ceiling consistent with the tenant's description of a leak."},
+    )
+
+
+class ImageEvidenceAnalysis(BaseModel):
+    """
+    Complete multimodal evidence analysis result.
+    
+    Combines EXIF metadata analysis, LLaVA vision analysis,
+    and Mistral multimodal reasoning for comprehensive evidence verification.
+    
+    Example:
+        >>> analysis = ImageEvidenceAnalysis(
+        ...     exif_analysis=EXIFData(...),
+        ...     vision_analysis=VisionAnalysis(...),
+        ...     multimodal_verdict=MultimodalVerdict(...),
+        ...     final_evidence_score=78,
+        ...     trust_level=TrustLevelEnum.MEDIUM_TRUST
+        ... )
+    """
+    
+    exif_analysis: EXIFData = Field(
+        ...,
+        description="Extracted EXIF metadata from the image",
+    )
+    vision_analysis: VisionAnalysis = Field(
+        ...,
+        description="LLaVA image understanding results",
+    )
+    multimodal_verdict: MultimodalVerdict = Field(
+        ...,
+        description="Mistral multimodal reasoning verdict",
+    )
+    final_evidence_score: int = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Final weighted evidence score (0-100)",
+        json_schema_extra={"example": 78},
+    )
+    trust_level: TrustLevelEnum = Field(
+        ...,
+        description="Trust level classification based on final score",
+        json_schema_extra={"example": "MEDIUM TRUST"},
+    )
+    request_id: Optional[str] = Field(
+        default=None,
+        description="Unique request ID for tracing",
+    )
+
+
+# Rebuild models to resolve forward references
+DAORecommendation.model_rebuild()

@@ -8,11 +8,13 @@ from app.models.requests import (
     BatchClassificationRequest,
     CaseAnalysisRequest,
     EvidenceItem,
+    ImageEvidenceRequest,
     IssueClassificationRequest,
     PropertyHistory,
 )
 from app.models.responses import (
     AlignmentAnalysis,
+    CleanlinessLevelEnum,
     DAORecommendation,
     ErrorResponse,
     EvidenceEvaluation,
@@ -20,12 +22,16 @@ from app.models.responses import (
     EXIFData,
     FraudAnalysis,
     HealthCheck,
+    ImageEvidenceAnalysis,
     IssueClassification,
     LandlordPosition,
+    LocationTypeEnum,
+    MultimodalVerdict,
     PositionAnalysis,
     RedFlags,
     TamperAnalysis,
     TenantPosition,
+    VisionAnalysis,
 )
 
 __all__ = [
@@ -35,6 +41,7 @@ __all__ = [
     "BatchClassificationRequest",
     "EvidenceItem",
     "PropertyHistory",
+    "ImageEvidenceRequest",
     # Responses
     "IssueClassification",
     "EvidenceValidation",
@@ -50,4 +57,10 @@ __all__ = [
     "PositionAnalysis",
     "EvidenceEvaluation",
     "RedFlags",
+    # Vision Analysis
+    "VisionAnalysis",
+    "MultimodalVerdict",
+    "ImageEvidenceAnalysis",
+    "CleanlinessLevelEnum",
+    "LocationTypeEnum",
 ]

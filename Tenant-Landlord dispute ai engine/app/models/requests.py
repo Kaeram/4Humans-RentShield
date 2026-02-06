@@ -156,6 +156,11 @@ class CaseAnalysisRequest(BaseModel):
         default=None,
         description="Historical complaint data for the property",
     )
+    enable_vision_analysis: bool = Field(
+        default=False,
+        description="Enable LLaVA vision analysis for evidence images. Adds ~10s per image.",
+        json_schema_extra={"example": True},
+    )
     
     @field_validator("tenant_complaint")
     @classmethod
@@ -186,3 +191,61 @@ class BatchClassificationRequest(BaseModel):
         max_length=50,
         description="List of issues to classify (max 50)",
     )
+
+
+class ImageEvidenceRequest(BaseModel):
+    """
+    Request model for multimodal image evidence analysis.
+    
+    Used by the LLaVA-based vision pipeline for comprehensive
+    evidence verification combining image analysis, EXIF validation,
+    and claim consistency checking.
+    
+    Example:
+        >>> request = ImageEvidenceRequest(
+        ...     image_url="https://storage.example.com/evidence/damage.jpg",
+        ...     claim_text="Water damage in kitchen ceiling from upstairs leak"
+        ... )
+    """
+    
+    image_url: str = Field(
+        ...,
+        min_length=10,
+        max_length=2048,
+        description="URL to the evidence image (must be publicly accessible or from Supabase Storage)",
+        json_schema_extra={
+            "example": "https://storage.example.com/evidence/water_damage.jpg"
+        },
+    )
+    claim_text: str = Field(
+        ...,
+        min_length=10,
+        max_length=5000,
+        description="Tenant's claim or complaint that the image evidence should support",
+        json_schema_extra={
+            "example": "Water has been leaking from the ceiling for 2 weeks causing visible mold growth and damage to kitchen cabinets."
+        },
+    )
+    incident_date: Optional[str] = Field(
+        default=None,
+        description="ISO datetime of the reported incident for timeline verification",
+        json_schema_extra={"example": "2024-01-15T00:00:00Z"},
+    )
+    
+    @field_validator("image_url")
+    @classmethod
+    def validate_image_url(cls, v: str) -> str:
+        """Validate URL format and allowed protocols."""
+        v = v.strip()
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("Image URL must use http:// or https:// protocol")
+        return v
+    
+    @field_validator("claim_text")
+    @classmethod
+    def validate_claim_text(cls, v: str) -> str:
+        """Strip whitespace and ensure non-empty content."""
+        v = v.strip()
+        if not v:
+            raise ValueError("Claim text cannot be empty or whitespace only")
+        return v

@@ -16,6 +16,7 @@ from app.models.responses import (
     EvidenceEvaluation,
     EvidenceQualityEnum,
     FraudAnalysis,
+    ImageEvidenceAnalysis,
     IssueCategoryEnum,
     IssueClassification,
     LandlordPosition,
@@ -90,14 +91,20 @@ class DisputeCaseAnalyzer:
         'Maintenance'
     """
     
-    def __init__(self, llm_service: OllamaLLMService) -> None:
+    def __init__(
+        self,
+        llm_service: OllamaLLMService,
+        evidence_pipeline: Optional[Any] = None,
+    ) -> None:
         """
         Initialize the case analyzer.
         
         Args:
             llm_service: OllamaLLMService instance for LLM queries.
+            evidence_pipeline: Optional EvidencePipeline for vision analysis.
         """
         self.llm = llm_service
+        self._evidence_pipeline = evidence_pipeline
     
     def classify_issue(
         self,
@@ -293,6 +300,11 @@ Respond with JSON in this exact format:
         # Build comprehensive case context
         case_context = self._build_case_context(case_data)
         
+        # Run vision analysis if enabled
+        vision_analyses: list[ImageEvidenceAnalysis] = []
+        if case_data.enable_vision_analysis:
+            vision_analyses = self._run_vision_analyses(case_data)
+        
         prompt = f"""You are an impartial housing dispute arbitrator analyzing a case for DAO (Decentralized Autonomous Organization) voting.
 
 {case_context}
@@ -415,6 +427,7 @@ Respond with JSON in this exact format:
                 red_flags=red_flags,
                 next_steps=result.get("next_steps", []),
                 estimated_resolution_timeline=result.get("estimated_resolution_timeline", "14-30 days"),
+                vision_analyses=vision_analyses if vision_analyses else None,
             )
             
             logger.info(
@@ -503,6 +516,55 @@ Respond with JSON in this exact format:
             return ConfidenceLevelEnum(value.lower())
         except ValueError:
             return ConfidenceLevelEnum.MEDIUM
+    
+    def _run_vision_analyses(
+        self,
+        case_data: CaseAnalysisRequest,
+    ) -> list[ImageEvidenceAnalysis]:
+        """
+        Run vision analysis on all evidence images.
+        
+        Uses EvidencePipeline to analyze each tenant evidence image
+        with LLaVA vision model.
+        """
+        results: list[ImageEvidenceAnalysis] = []
+        
+        if not self._evidence_pipeline:
+            # Lazy import to avoid circular dependencies
+            from app.services.evidence_pipeline import EvidencePipeline
+            self._evidence_pipeline = EvidencePipeline()
+        
+        # Process tenant evidence images
+        for evidence in case_data.tenant_evidence:
+            try:
+                logger.info(
+                    "Running vision analysis on evidence",
+                    url=evidence.file_url[:80],
+                )
+                
+                analysis = self._evidence_pipeline.analyze_evidence(
+                    image_url=evidence.file_url,
+                    claim_text=case_data.tenant_complaint,
+                    incident_date=case_data.incident_date.isoformat() if case_data.incident_date else None,
+                )
+                results.append(analysis)
+                
+            except Exception as e:
+                logger.warning(
+                    "Vision analysis failed for evidence",
+                    url=evidence.file_url[:80],
+                    error=str(e),
+                )
+                # Continue with other evidence items
+                continue
+        
+        logger.info(
+            "Vision analyses complete",
+            total_evidence=len(case_data.tenant_evidence),
+            successful=len(results),
+        )
+        
+        return results
     
     def detect_fraud_patterns(
         self,
