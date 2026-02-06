@@ -48,8 +48,8 @@ export function IssueCard({ issue, variant = 'default', linkPrefix = '/tenant/is
             <Link
                 to={`${linkPrefix}/${issue.id}`}
                 className={cn(
-                    'block card group',
-                    isCompact ? 'p-4' : 'p-6'
+                    'block rounded-xl border border-transparent transition-all duration-200',
+                    isCompact ? 'p-0' : 'p-6 bg-neutral-900/50 backdrop-blur-md border-neutral-800 hover:border-lime-500/30'
                 )}
             >
                 <div className="flex items-start justify-between gap-4">
@@ -75,7 +75,7 @@ export function IssueCard({ issue, variant = 'default', linkPrefix = '/tenant/is
 
                         {/* Title */}
                         <h3 className={cn(
-                            'font-semibold text-neutral-900 group-hover:text-primary-600 transition-colors',
+                            'font-semibold text-white group-hover:text-lime-400 transition-colors',
                             isCompact ? 'text-sm' : 'text-base'
                         )}>
                             {issue.title}
@@ -83,7 +83,7 @@ export function IssueCard({ issue, variant = 'default', linkPrefix = '/tenant/is
 
                         {/* Description (only in default variant) */}
                         {!isCompact && (
-                            <p className="mt-1 text-sm text-neutral-600">
+                            <p className="mt-1 text-sm text-neutral-400">
                                 {truncateText(issue.description, 120)}
                             </p>
                         )}
@@ -109,7 +109,7 @@ export function IssueCard({ issue, variant = 'default', linkPrefix = '/tenant/is
                                 {issue.images.slice(0, 3).map((img, idx) => (
                                     <div
                                         key={idx}
-                                        className="h-12 w-12 rounded-lg bg-neutral-100 overflow-hidden"
+                                        className="h-12 w-12 rounded-lg bg-neutral-800 overflow-hidden border border-neutral-700"
                                     >
                                         <img
                                             src={img}
@@ -119,7 +119,7 @@ export function IssueCard({ issue, variant = 'default', linkPrefix = '/tenant/is
                                     </div>
                                 ))}
                                 {issue.images.length > 3 && (
-                                    <div className="h-12 w-12 rounded-lg bg-neutral-100 flex items-center justify-center text-xs font-medium text-neutral-500">
+                                    <div className="h-12 w-12 rounded-lg bg-neutral-800 flex items-center justify-center text-xs font-medium text-neutral-400 border border-neutral-700">
                                         +{issue.images.length - 3}
                                     </div>
                                 )}
@@ -129,7 +129,7 @@ export function IssueCard({ issue, variant = 'default', linkPrefix = '/tenant/is
 
                     {/* Arrow */}
                     <ChevronRight className={cn(
-                        'flex-shrink-0 text-neutral-400 group-hover:text-primary-600 transition-colors',
+                        'flex-shrink-0 text-neutral-600 group-hover:text-lime-400 transition-colors',
                         isCompact ? 'h-4 w-4' : 'h-5 w-5'
                     )} />
                 </div>
