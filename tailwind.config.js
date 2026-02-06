@@ -111,6 +111,7 @@ export default {
                 'slide-down': 'slideDown 0.3s ease-out',
                 'scale-in': 'scaleIn 0.2s ease-out',
                 'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                'meteor-effect': 'meteor 5s linear infinite',
             },
             keyframes: {
                 fadeIn: {
@@ -128,6 +129,14 @@ export default {
                 scaleIn: {
                     '0%': { opacity: '0', transform: 'scale(0.95)' },
                     '100%': { opacity: '1', transform: 'scale(1)' },
+                },
+                meteor: {
+                    '0%': { transform: 'rotate(215deg) translateX(0)', opacity: '1' },
+                    '70%': { opacity: '1' },
+                    '100%': {
+                        transform: 'rotate(215deg) translateX(500px)',
+                        opacity: '0',
+                    },
                 },
             },
         },
