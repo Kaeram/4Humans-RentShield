@@ -38,7 +38,7 @@ export function TenantDashboard() {
 
     return (
         <div className="min-h-screen bg-neutral-950 selection:bg-lime-500/30">
-            <Navbar />
+            <Navbar theme="dark" />
 
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-violet-600/20 rounded-full blur-[120px] mix-blend-screen" />
