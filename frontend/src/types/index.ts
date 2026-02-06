@@ -10,6 +10,22 @@ export interface User {
     createdAt: string
 }
 
+// Profile Type (matches profiles table)
+export interface Profile {
+    id: string
+    role: UserRole
+    created_at: string
+}
+
+// Property Type (matches properties table)
+export interface Property {
+    id: string
+    landlord_id: string
+    area?: string
+    risk_score?: number
+    created_at: string
+}
+
 // Issue Types
 export type IssueCategory =
     | 'maintenance'
@@ -54,17 +70,42 @@ export interface TimelineEvent {
     actorRole: UserRole
 }
 
-// AI Verdict Types
+// IssueComment Type (matches comments table, renamed to avoid DOM Comment collision)
+export interface IssueComment {
+    id: string
+    issue_id: string
+    author_id: string
+    content: string
+    created_at: string
+}
+
+// Evidence Type (matches evidence table)
+export interface Evidence {
+    id: string
+    issue_id: string
+    file_url: string
+    acf_valid?: boolean
+    created_at: string
+}
+
+// AI Verdict Types (matches ai_verdicts table)
 export interface AiVerdict {
-    caseId: string
-    tenantConfidence: number // 0-100
-    landlordConfidence: number // 0-100
-    neutralConfidence: number // 0-100
-    recommendedAction: string
-    reasoning: string
-    redFlags: string[]
-    evidenceAnalysis: EvidenceAnalysis[]
-    generatedAt: string
+    id?: string
+    issue_id?: string
+    caseId?: string // Legacy field for compatibility
+    confidence_score?: number
+    auto_category?: string
+    raw_output?: string
+    // Legacy fields for compatibility
+    tenantConfidence?: number // 0-100
+    landlordConfidence?: number // 0-100
+    neutralConfidence?: number // 0-100
+    recommendedAction?: string
+    reasoning?: string
+    redFlags?: string[]
+    evidenceAnalysis?: EvidenceAnalysis[]
+    created_at?: string
+    generatedAt?: string
 }
 
 export interface EvidenceAnalysis {
@@ -88,12 +129,17 @@ export interface DaoCase {
     createdAt: string
 }
 
+// Vote Type (matches dao_votes table)
 export interface Vote {
     id: string
-    caseId: string
-    voterId: string
-    option: VoteOption
-    createdAt: string
+    issue_id?: string
+    caseId?: string // Legacy field for compatibility
+    juror_id?: string
+    voterId?: string // Legacy field for compatibility
+    vote?: VoteOption
+    option?: VoteOption // Legacy field for compatibility
+    voted_at?: string
+    createdAt?: string
 }
 
 export interface VoteResult {

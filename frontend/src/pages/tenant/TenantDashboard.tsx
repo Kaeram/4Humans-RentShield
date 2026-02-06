@@ -6,12 +6,7 @@ import { Navbar, Footer, IssueCard, StatusBadge } from '@/components'
 import { api } from '@/services/api'
 import { Issue } from '@/types'
 
-const quickStats = [
-    { label: 'Total Reports', value: '4', icon: FileText, color: 'text-violet-400' },
-    { label: 'In Progress', value: '2', icon: Clock, color: 'text-amber-400' },
-    { label: 'Resolved', value: '1', icon: TrendingUp, color: 'text-lime-400' },
-    { label: 'Escalated', value: '1', icon: AlertCircle, color: 'text-red-400' },
-]
+
 
 export function TenantDashboard() {
     const [issues, setIssues] = useState<Issue[]>([])
@@ -21,8 +16,18 @@ export function TenantDashboard() {
     useEffect(() => {
         const fetchIssues = async () => {
             try {
-                const data = await api.issues.getByTenantId('tenant-1')
+                // Get authenticated user
+                const user = await api.auth.getCurrentUser()
+                if (!user) {
+                    console.error('No authenticated user')
+                    return
+                }
+
+                // Fetch issues for the logged-in tenant
+                const data = await api.issues.getByTenantId(user.id)
                 setIssues(data)
+            } catch (error) {
+                console.error('Failed to fetch issues:', error)
             } finally {
                 setIsLoading(false)
             }
@@ -35,6 +40,19 @@ export function TenantDashboard() {
         if (filter === 'resolved') return ['resolved', 'dismissed'].includes(issue.status)
         return true
     })
+
+    // Calculate stats from actual data
+    const quickStats = [
+        { label: 'Total Reports', value: String(issues.length), icon: FileText, color: 'text-violet-400' },
+        {
+            label: 'In Progress',
+            value: String(issues.filter(i => ['pending', 'in-review', 'under-investigation'].includes(i.status)).length),
+            icon: Clock,
+            color: 'text-amber-400'
+        },
+        { label: 'Resolved', value: String(issues.filter(i => i.status === 'resolved').length), icon: TrendingUp, color: 'text-lime-400' },
+        { label: 'Escalated', value: String(issues.filter(i => i.status === 'escalated').length), icon: AlertCircle, color: 'text-red-400' },
+    ]
 
     return (
         <div className="min-h-screen bg-neutral-950 selection:bg-lime-500/30">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     ArrowLeft,
@@ -14,6 +14,7 @@ import {
     AlertTriangle
 } from 'lucide-react'
 import { Navbar } from '@/components'
+import AnimatedShaderBackground from '@/components/ui/animated-shader-background'
 import { api } from '@/services/api'
 import { IssueCategory, ReportIssueForm } from '@/types'
 
@@ -37,8 +38,10 @@ const steps = [
 ]
 
 export function ReportIssue() {
+    const navigate = useNavigate()
     const [currentStep, setCurrentStep] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [error, setError] = useState('')
     const [formData, setFormData] = useState<ReportIssueForm>({
         propertyAddress: '',
         category: '',
@@ -88,11 +91,15 @@ export function ReportIssue() {
 
     const handleSubmit = async () => {
         setIsSubmitting(true)
+        setError('')
         try {
+            console.log('Creating issue with data:', formData)
             await api.issues.create(formData)
+            console.log('Issue created successfully')
             setCurrentStep(5)
-        } catch (error) {
-            console.error('Failed to submit issue:', error)
+        } catch (err: any) {
+            console.error('Failed to submit issue:', err)
+            setError(err?.message || 'Failed to submit issue. Please try again.')
         } finally {
             setIsSubmitting(false)
         }
@@ -114,15 +121,16 @@ export function ReportIssue() {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-50">
-            <Navbar />
+        <div className="min-h-screen bg-neutral-900 relative overflow-hidden">
+            <AnimatedShaderBackground />
+            <Navbar theme="dark" />
 
-            <main className="pt-24 pb-16">
+            <main className="pt-24 pb-16 relative z-10">
                 <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
                     {/* Back Link */}
                     <Link
                         to="/tenant/dashboard"
-                        className="inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 mb-6 transition-colors"
+                        className="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-lime-400 mb-6 transition-colors"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to Dashboard
@@ -135,8 +143,8 @@ export function ReportIssue() {
                                 <div key={step.id} className="flex items-center">
                                     <div
                                         className={`flex items-center justify-center h-10 w-10 rounded-full border-2 transition-colors ${currentStep >= step.id
-                                            ? 'bg-primary-600 border-primary-600 text-white'
-                                            : 'border-neutral-300 text-neutral-400'
+                                                ? 'bg-lime-400 border-lime-400 text-neutral-900'
+                                                : 'border-neutral-600 text-neutral-500'
                                             }`}
                                     >
                                         {currentStep > step.id ? (
@@ -147,7 +155,7 @@ export function ReportIssue() {
                                     </div>
                                     {idx < steps.length - 1 && (
                                         <div
-                                            className={`hidden sm:block w-12 lg:w-24 h-0.5 mx-2 ${currentStep > step.id ? 'bg-primary-600' : 'bg-neutral-200'
+                                            className={`hidden sm:block w-12 lg:w-24 h-0.5 mx-2 ${currentStep > step.id ? 'bg-lime-400' : 'bg-neutral-700'
                                                 }`}
                                         />
                                     )}
@@ -155,15 +163,22 @@ export function ReportIssue() {
                             ))}
                         </div>
                         <div className="mt-4">
-                            <h2 className="text-lg font-semibold text-neutral-900">
+                            <h2 className="text-lg font-semibold text-white">
                                 {steps[currentStep - 1].title}
                             </h2>
-                            <p className="text-sm text-neutral-500">Step {currentStep} of 5</p>
+                            <p className="text-sm text-neutral-400">Step {currentStep} of 5</p>
                         </div>
                     </div>
 
                     {/* Step Content */}
-                    <div className="card p-6">
+                    <div className="bg-neutral-900/60 backdrop-blur-xl border border-neutral-800/50 rounded-2xl shadow-2xl p-6">
+                        {/* Error Message */}
+                        {error && (
+                            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                                {error}
+                            </div>
+                        )}
+
                         <AnimatePresence mode="wait">
                             {/* Step 1: Property Address */}
                             {currentStep === 1 && (
@@ -175,7 +190,7 @@ export function ReportIssue() {
                                     className="space-y-4"
                                 >
                                     <div>
-                                        <label htmlFor="address" className="label">
+                                        <label htmlFor="address" className="block text-sm font-medium text-neutral-300 mb-2">
                                             Property Address
                                         </label>
                                         <input
@@ -183,7 +198,7 @@ export function ReportIssue() {
                                             type="text"
                                             value={formData.propertyAddress}
                                             onChange={(e) => setFormData({ ...formData, propertyAddress: e.target.value })}
-                                            className="input-field"
+                                            className="w-full px-4 py-3 bg-neutral-800/50 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all"
                                             placeholder="123 Main St, Apt 4B, San Francisco, CA 94102"
                                         />
                                         <p className="mt-1.5 text-xs text-neutral-500">
@@ -201,7 +216,7 @@ export function ReportIssue() {
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
                                 >
-                                    <p className="text-sm text-neutral-600 mb-4">
+                                    <p className="text-sm text-neutral-400 mb-4">
                                         Select the category that best describes your issue
                                     </p>
                                     <div className="grid grid-cols-2 gap-3">
@@ -210,13 +225,13 @@ export function ReportIssue() {
                                                 key={cat.id}
                                                 onClick={() => setFormData({ ...formData, category: cat.id })}
                                                 className={`p-4 rounded-xl border-2 text-left transition-all ${formData.category === cat.id
-                                                    ? 'border-primary-600 bg-primary-50'
-                                                    : 'border-neutral-200 hover:border-neutral-300'
+                                                        ? 'border-lime-400 bg-lime-400/10'
+                                                        : 'border-neutral-700 hover:border-neutral-600 bg-neutral-800/30'
                                                     }`}
                                             >
                                                 <span className="text-2xl">{cat.icon}</span>
-                                                <p className="font-medium text-neutral-900 mt-2">{cat.label}</p>
-                                                <p className="text-xs text-neutral-500 mt-0.5">{cat.description}</p>
+                                                <p className="font-medium text-white mt-2">{cat.label}</p>
+                                                <p className="text-xs text-neutral-400 mt-0.5">{cat.description}</p>
                                             </button>
                                         ))}
                                     </div>
@@ -233,23 +248,23 @@ export function ReportIssue() {
                                     className="space-y-4"
                                 >
                                     <div>
-                                        <label htmlFor="description" className="label">
+                                        <label htmlFor="description" className="block text-sm font-medium text-neutral-300 mb-2">
                                             Describe the Issue
                                         </label>
                                         <textarea
                                             id="description"
                                             value={formData.description}
                                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                            className="input-field min-h-[200px]"
+                                            className="w-full px-4 py-3 bg-neutral-800/50 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all min-h-[200px]"
                                             placeholder="Please provide detailed information about the issue. Include when it started, how it affects you, and any previous attempts to resolve it with your landlord."
                                         />
                                         <p className="mt-1.5 text-xs text-neutral-500">
                                             Minimum 20 characters. Be as detailed as possible.
                                         </p>
                                     </div>
-                                    <div className="flex items-start gap-2 p-3 rounded-lg bg-warning-50 border border-warning-100">
-                                        <AlertTriangle className="h-4 w-4 text-warning-600 mt-0.5 flex-shrink-0" />
-                                        <p className="text-xs text-warning-700">
+                                    <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                                        <AlertTriangle className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                                        <p className="text-xs text-yellow-200">
                                             Avoid including personal identifying information of others. Your own identity is protected.
                                         </p>
                                     </div>
@@ -266,8 +281,10 @@ export function ReportIssue() {
                                     className="space-y-4"
                                 >
                                     <div>
-                                        <label className="label">Upload Evidence (Optional)</label>
-                                        <div className="border-2 border-dashed border-neutral-300 rounded-xl p-6 text-center hover:border-primary-500 transition-colors">
+                                        <label className="block text-sm font-medium text-neutral-300 mb-2">
+                                            Upload Evidence (Optional)
+                                        </label>
+                                        <div className="border-2 border-dashed border-neutral-700 rounded-xl p-6 text-center hover:border-lime-400 transition-colors bg-neutral-800/30">
                                             <input
                                                 type="file"
                                                 id="images"
@@ -277,9 +294,9 @@ export function ReportIssue() {
                                                 className="hidden"
                                             />
                                             <label htmlFor="images" className="cursor-pointer">
-                                                <Upload className="h-10 w-10 text-neutral-400 mx-auto mb-3" />
-                                                <p className="text-sm text-neutral-600">
-                                                    <span className="text-primary-600 font-medium">Click to upload</span> or drag and drop
+                                                <Upload className="h-10 w-10 text-neutral-500 mx-auto mb-3" />
+                                                <p className="text-sm text-neutral-300">
+                                                    <span className="text-lime-400 font-medium">Click to upload</span> or drag and drop
                                                 </p>
                                                 <p className="text-xs text-neutral-500 mt-1">PNG, JPG, HEIC up to 10MB each</p>
                                             </label>
@@ -322,17 +339,20 @@ export function ReportIssue() {
                                     animate={{ opacity: 1, scale: 1 }}
                                     className="text-center py-8"
                                 >
-                                    <div className="h-16 w-16 rounded-full bg-success-100 flex items-center justify-center mx-auto mb-4">
-                                        <CheckCircle className="h-8 w-8 text-success-600" />
+                                    <div className="h-16 w-16 rounded-full bg-lime-400/20 flex items-center justify-center mx-auto mb-4">
+                                        <CheckCircle className="h-8 w-8 text-lime-400" />
                                     </div>
-                                    <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                                    <h3 className="text-xl font-semibold text-white mb-2">
                                         Issue Submitted Successfully!
                                     </h3>
-                                    <p className="text-neutral-600 mb-6">
+                                    <p className="text-neutral-400 mb-6">
                                         Your issue has been submitted and is being processed. Our AI will analyze your evidence shortly.
                                     </p>
                                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                        <Link to="/tenant/dashboard" className="btn-primary">
+                                        <Link
+                                            to="/tenant/dashboard"
+                                            className="px-6 py-3 bg-lime-400 text-neutral-900 rounded-lg font-medium hover:bg-lime-300 transition-colors"
+                                        >
                                             View Dashboard
                                         </Link>
                                         <button
@@ -341,7 +361,7 @@ export function ReportIssue() {
                                                 setFormData({ propertyAddress: '', category: '', description: '', images: [] })
                                                 setImagePreview([])
                                             }}
-                                            className="btn-secondary"
+                                            className="px-6 py-3 bg-neutral-800 text-white rounded-lg font-medium hover:bg-neutral-700 transition-colors"
                                         >
                                             Report Another Issue
                                         </button>
@@ -352,13 +372,13 @@ export function ReportIssue() {
 
                         {/* Navigation Buttons */}
                         {currentStep < 5 && (
-                            <div className="flex items-center justify-between mt-8 pt-6 border-t border-neutral-100">
+                            <div className="flex items-center justify-between mt-8 pt-6 border-t border-neutral-800">
                                 <button
                                     onClick={handleBack}
                                     disabled={currentStep === 1}
-                                    className="btn-secondary disabled:opacity-50"
+                                    className="px-6 py-3 bg-neutral-800 text-white rounded-lg font-medium hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
-                                    <ArrowLeft className="h-4 w-4 mr-2" />
+                                    <ArrowLeft className="h-4 w-4" />
                                     Back
                                 </button>
 
@@ -366,26 +386,26 @@ export function ReportIssue() {
                                     <button
                                         onClick={handleNext}
                                         disabled={!canProceed()}
-                                        className="btn-primary disabled:opacity-50"
+                                        className="px-6 py-3 bg-lime-400 text-neutral-900 rounded-lg font-medium hover:bg-lime-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                     >
                                         Continue
-                                        <ArrowRight className="h-4 w-4 ml-2" />
+                                        <ArrowRight className="h-4 w-4" />
                                     </button>
                                 ) : (
                                     <button
                                         onClick={handleSubmit}
                                         disabled={isSubmitting}
-                                        className="btn-primary"
+                                        className="px-6 py-3 bg-lime-400 text-neutral-900 rounded-lg font-medium hover:bg-lime-300 transition-colors disabled:opacity-50 flex items-center gap-2"
                                     >
                                         {isSubmitting ? (
                                             <>
-                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                <Loader2 className="h-4 w-4 animate-spin" />
                                                 Submitting...
                                             </>
                                         ) : (
                                             <>
                                                 Submit Issue
-                                                <CheckCircle className="h-4 w-4 ml-2" />
+                                                <CheckCircle className="h-4 w-4" />
                                             </>
                                         )}
                                     </button>

@@ -48,17 +48,22 @@ export function LoginPage() {
         setIsLoading(true)
 
         try {
-            await api.auth.login(email, password, selectedRole)
+            console.log('Attempting login with:', { email, role: selectedRole })
+            const user = await api.auth.login(email, password, selectedRole)
+            console.log('Login successful:', user)
 
-            // Navigate to appropriate dashboard
+            // Navigate to appropriate dashboard based on user role
             const dashboardRoutes: Record<UserRole, string> = {
                 tenant: '/tenant/dashboard',
                 landlord: '/landlord/dashboard',
                 dao: '/dao/dashboard',
             }
-            navigate(dashboardRoutes[selectedRole])
-        } catch {
-            setError('Invalid email or password. Please try again.')
+
+            navigate(dashboardRoutes[user.role])
+        } catch (err: any) {
+            console.error('Login error:', err)
+            const errorMessage = err?.message || 'Invalid email or password'
+            setError(errorMessage)
         } finally {
             setIsLoading(false)
         }
