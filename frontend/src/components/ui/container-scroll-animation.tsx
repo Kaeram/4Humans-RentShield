@@ -47,7 +47,6 @@ export const ContainerScroll = ({
         [0, 1],
         isMobile ? [0.92, 0.98] : [1.02, 1]
     );
-    const translate = useTransform(smoothProgress, [0, 1], [0, -50]);
     const headerTranslate = useTransform(smoothProgress, [0, 1], [0, -30]);
     const opacity = useTransform(smoothProgress, [0, 0.2, 1], [0.95, 1, 1]);
 

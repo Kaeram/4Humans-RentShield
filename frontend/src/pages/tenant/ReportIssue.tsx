@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     ArrowLeft,
@@ -37,7 +37,6 @@ const steps = [
 ]
 
 export function ReportIssue() {
-    const navigate = useNavigate()
     const [currentStep, setCurrentStep] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [formData, setFormData] = useState<ReportIssueForm>({
@@ -136,8 +135,8 @@ export function ReportIssue() {
                                 <div key={step.id} className="flex items-center">
                                     <div
                                         className={`flex items-center justify-center h-10 w-10 rounded-full border-2 transition-colors ${currentStep >= step.id
-                                                ? 'bg-primary-600 border-primary-600 text-white'
-                                                : 'border-neutral-300 text-neutral-400'
+                                            ? 'bg-primary-600 border-primary-600 text-white'
+                                            : 'border-neutral-300 text-neutral-400'
                                             }`}
                                     >
                                         {currentStep > step.id ? (
@@ -211,8 +210,8 @@ export function ReportIssue() {
                                                 key={cat.id}
                                                 onClick={() => setFormData({ ...formData, category: cat.id })}
                                                 className={`p-4 rounded-xl border-2 text-left transition-all ${formData.category === cat.id
-                                                        ? 'border-primary-600 bg-primary-50'
-                                                        : 'border-neutral-200 hover:border-neutral-300'
+                                                    ? 'border-primary-600 bg-primary-50'
+                                                    : 'border-neutral-200 hover:border-neutral-300'
                                                     }`}
                                             >
                                                 <span className="text-2xl">{cat.icon}</span>

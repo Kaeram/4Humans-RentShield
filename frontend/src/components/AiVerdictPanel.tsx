@@ -15,7 +15,7 @@ export function AiVerdictPanel({ verdict, compact = false }: AiVerdictPanelProps
         return 'text-neutral-500'
     }
 
-    const getBarColor = (confidence: number, type: 'tenant' | 'landlord' | 'neutral') => {
+    const getBarColor = (type: 'tenant' | 'landlord' | 'neutral') => {
         if (type === 'tenant') return 'bg-primary-500'
         if (type === 'landlord') return 'bg-accent-500'
         return 'bg-neutral-400'
@@ -60,7 +60,7 @@ export function AiVerdictPanel({ verdict, compact = false }: AiVerdictPanelProps
                             initial={{ width: 0 }}
                             animate={{ width: `${verdict.tenantConfidence}%` }}
                             transition={{ duration: 0.5, delay: 0.1 }}
-                            className={cn('h-full rounded-full', getBarColor(verdict.tenantConfidence, 'tenant'))}
+                            className={cn('h-full rounded-full', getBarColor('tenant'))}
                         />
                     </div>
                 </div>
@@ -78,7 +78,7 @@ export function AiVerdictPanel({ verdict, compact = false }: AiVerdictPanelProps
                             initial={{ width: 0 }}
                             animate={{ width: `${verdict.landlordConfidence}%` }}
                             transition={{ duration: 0.5, delay: 0.2 }}
-                            className={cn('h-full rounded-full', getBarColor(verdict.landlordConfidence, 'landlord'))}
+                            className={cn('h-full rounded-full', getBarColor('landlord'))}
                         />
                     </div>
                 </div>
@@ -96,7 +96,7 @@ export function AiVerdictPanel({ verdict, compact = false }: AiVerdictPanelProps
                             initial={{ width: 0 }}
                             animate={{ width: `${verdict.neutralConfidence}%` }}
                             transition={{ duration: 0.5, delay: 0.3 }}
-                            className={cn('h-full rounded-full', getBarColor(verdict.neutralConfidence, 'neutral'))}
+                            className={cn('h-full rounded-full', getBarColor('neutral'))}
                         />
                     </div>
                 </div>

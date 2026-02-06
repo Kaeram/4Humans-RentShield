@@ -66,7 +66,7 @@ export function EncryptedText({
                 setDisplayText((prev) => {
                     return prev
                         .split('')
-                        .map((char, i) => {
+                        .map((_, i) => {
                             if (i < newRevealedCount || text[i] === ' ') {
                                 return text[i]
                             }

@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import {
     LandingPage,
     LoginPage,
+    SignupPage,
     TenantDashboard,
     ReportIssue,
     TenantIssueDetail,
@@ -17,6 +18,7 @@ function App() {
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
 
             {/* Tenant Routes */}
             <Route path="/tenant/dashboard" element={<TenantDashboard />} />
